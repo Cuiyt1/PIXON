@@ -365,11 +365,11 @@ void PixonFFT::convolve(const double *pseudo_img, unsigned int *pixon_map, doubl
     /* setup resp */
     for(j=0; j<nd_fft/2; j++)
     {
-      resp_real[j] = 1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (j)*(j)/psize/psize);
+      resp_real[j] = pixon_function(j, 0, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (j)*(j)/psize/psize);
     }
     for(j=nd_fft-1; j>=nd_fft/2; j--)
     {
-      resp_real[j] = 1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (nd_fft-j)*(nd_fft-j)/psize/psize);
+      resp_real[j] = pixon_function(j, nd_fft, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (nd_fft-j)*(nd_fft-j)/psize/psize);
     }
     fftw_execute(presp);
     
@@ -437,13 +437,18 @@ Pixon::~Pixon()
 double Pixon::interp(double t)
 {
   int it;
+
   it = (t - cont.time[0])/dt;
-  if(it <=0 || it >= cont.size)
-    return 0.0;
-  return rmline[it] + (rmline[it+1] - rmline[it])/(cont.time[it+1] - cont.time[it]) * (t - cont.time[it]);
+
+  if(it < 0)
+    return rmline[0];
+  else if(it >= cont.size -1)
+    return rmline[cont.size -1];
+
+  return rmline[it] + (rmline[it+1] - rmline[it])/dt * (t - cont.time[it]);
 }
-    
-void Pixon::compute_rm_pixon(const vector<double> &x)
+
+void Pixon::compute_rm_pixon(const double *x)
 {
   int i;
   double t, it;
@@ -453,6 +458,7 @@ void Pixon::compute_rm_pixon(const vector<double> &x)
     pseudo_image[i] = exp(x[i]);
   }
   pfft.convolve(pseudo_image, pixon_map, image);
+
   /* reverberation mapping */
   rmfft.convolve(image, npixel, rmline);
 
@@ -465,7 +471,7 @@ void Pixon::compute_rm_pixon(const vector<double> &x)
   }
 }
 
-double Pixon::chisquare(const vector<double> &x)
+double Pixon::chisquare(const double *x)
 {
   double chisq;
   int i;
@@ -480,7 +486,7 @@ double Pixon::chisquare(const vector<double> &x)
   return chisq;
 }
 
-void Pixon::chisquare_grad(const vector<double> &x, vector<double> &grad)
+void Pixon::chisquare_grad(const double *x, double *grad)
 {
   int i, k, j, joffset, jrange1, jrange2;
   double psize, t, tau, cont_intp, grad_in, grad_out, K;
@@ -489,7 +495,7 @@ void Pixon::chisquare_grad(const vector<double> &x, vector<double> &grad)
     grad_out = 0.0;
     psize = pixon_map[i] + 1;
     joffset = 5 * psize;
-    jrange1 = fmax(i - joffset, 0.0);
+    jrange1 = fmax(i - joffset, 0);
     jrange2 = fmin(i + joffset, npixel);
     
     for(k=0; k<line.size; k++)
@@ -500,12 +506,12 @@ void Pixon::chisquare_grad(const vector<double> &x, vector<double> &grad)
       {
         tau = j * dt;
         cont_intp = interp(t-tau);
-        K = 1.0/sqrt(2.0*M_PI)/psize * exp( - 0.5*(j-i)*(j-i)/(psize*psize) );
+        K = pixon_function(j, i, psize);
         grad_in += K * cont_intp;
       }
       grad_out += grad_in * residual[k]/line.error[k]/line.error[k];
     }
-    grad[i] = pseudo_image[i] * grad_out * 2.0*dt;
+    grad[i] = grad_out * 2.0*dt * pseudo_image[i];
   }
 }
 
@@ -534,16 +540,21 @@ void Pixon::update_pixon_map()
 }
 /*==================================================================*/
 
-double func(const vector<double> &x, vector<double> &grad, void *f_data)
+double pixon_function(double x, double y, double psize)
+{
+  return 1.0/sqrt(2.0*M_PI)/psize * exp( -0.5*(y-x)*(y-x)/psize/psize );
+}
+
+double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)
 {
   Pixon *pixon = (Pixon *)f_data;
   double chisq;
 
-  pixon->compute_rm_pixon(x);
+  pixon->compute_rm_pixon(x.data());
   if (!grad.empty()) 
   {
-    pixon->chisquare_grad(x, grad);
+    pixon->chisquare_grad(x.data(), grad.data());
   }
-  chisq = pixon->chisquare(x);
+  chisq = pixon->chisquare(x.data());
   return chisq;
 }

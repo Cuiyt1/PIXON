@@ -19,6 +19,8 @@
 #include <nlopt.hpp>
 #include <fftw3.h>
 
+#include "tnc.h"
+
 using namespace std;
 
 class Data;
@@ -123,8 +125,11 @@ class Pixon
     ~Pixon();
     double interp(double t);
     void compute_rm_pixon(const vector<double> &x);
+    void compute_rm_pixon(const double *x);
     double chisquare(const vector<double> &x);
+    double chisquare(const double *x);
     void chisquare_grad(const vector<double> &x, vector<double> &grad);
+    void chisquare_grad(const double *x, double *grad);
     double compute_pixon_number();
     void update_pixon_map();
 
@@ -145,6 +150,6 @@ class Pixon
   private:
 };
 
-double func(const vector<double> &x, vector<double> &grad, void *f_data);
-
+double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data);
+double pixon_function(double x, double y, double psize);
 #endif

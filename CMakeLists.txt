@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-project(pixon LANGUAGES CXX)
-add_executable(pixon src/main.cpp src/utilities.cpp)
+project(pixon LANGUAGES CXX C)
+add_executable(pixon src/main.cpp src/utilities.cpp src/tnc.c)
 
 find_path(NLOPT_INCLUDE_DIR nlopt.h)
 find_library(NLOPT_LIB nlopt)

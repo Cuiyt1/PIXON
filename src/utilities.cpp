@@ -558,3 +558,14 @@ double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)
   chisq = pixon->chisquare(x.data());
   return chisq;
 }
+
+tnc_function func_tnc;
+int func_tnc(double x[], double *f, double g[], void *state)
+{
+  Pixon *pixon = (Pixon *)state;
+
+  pixon->compute_rm_pixon(x);
+  pixon->chisquare_grad(x, g);
+  *f = pixon->chisquare(x);
+  return 0;
+}

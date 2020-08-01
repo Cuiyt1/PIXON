@@ -152,4 +152,6 @@ class Pixon
 
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data);
 double pixon_function(double x, double y, double psize);
+tnc_function func_tnc;
+int func_tnc(double x[], double *f, double g[], void *state);
 #endif

@@ -31,17 +31,6 @@ int main(int argc, char ** argv)
   return 0;
 }
 
-static tnc_function func_tnc;
-static int func_tnc(double x[], double *f, double g[], void *state)
-{
-  Pixon *pixon = (Pixon *)state;
-
-  pixon->compute_rm_pixon(x);
-  pixon->chisquare_grad(x, g);
-  *f = pixon->chisquare(x);
-  return 0;
-}
-
 void test_tnc()
 {
   Data cont, line;

@@ -56,13 +56,13 @@ void test_tnc()
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
-  double f_old, num_old, num;
+  double f_old, num_old, num, df, dnum;
   double *image=new double[npixel], *itline=new double[line.size];
  
-  int rc, maxCGit = 2000, maxnfeval = 2000, nfeval, niter;
+  int rc, maxCGit = npixel, maxnfeval = 2000, nfeval, niter;
   double f, g[npixel], x[npixel], x_old[npixel], low[npixel], up[npixel],
-    eta = -1.0, stepmx = -1.0,
-    accuracy = 1.0e-15, fmin = cont.size, ftol = 1.0e-15, xtol = 1.0e-15, pgtol = 1.0e-15,
+    eta = -1.0, stepmx = 10000.0,
+    accuracy = 1.0e-15, fmin = cont.size, ftol = -1.0, xtol = -1.0, pgtol = -1.0,
     rescale = -1.0;
 
   /* NLopt */
@@ -118,8 +118,11 @@ void test_tnc()
       rescale, &nfeval, &niter, NULL);
     
     cout<<f<<"  "<<num<<endl;
+    
+    df = f-f_old;
+    dnum = num - num_old;
 
-    if(f_old - f < num - num_old)
+    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
       break;
 
     num_old = num;
@@ -127,17 +130,17 @@ void test_tnc()
     memcpy(image, pixon.image, npixel*sizeof(double));
     memcpy(itline, pixon.itline, line.size*sizeof(double));
     memcpy(x_old, x, npixel*sizeof(double));
-  }while(npixon>3);
+  }while(npixon>0);
 
   ofstream fout;
-  fout.open("data/resp.txt");
+  fout.open("data/resp_tnc.txt");
   for(i=0; i<npixel; i++)
   {
     fout<<pixon.dt*i<<"  "<<exp(x_old[i])<<"   "<<image[i]<<"  "<<pixon_function(pixon.dt*i, 300.0, 50.0)<<endl;
   }
   fout.close();
 
-  fout.open("data/line_sim.txt");
+  fout.open("data/line_sim_tnc.txt");
   for(i=0; i<line.size; i++)
   {
     fout<<line.time[i]<<"  "<<itline[i]<<endl;
@@ -157,11 +160,12 @@ void test_nlopt()
   fline = "data/line.txt";
   line.load(fline);
 
-  unsigned int npixel = 100, npixon = 10;
+  unsigned int npixel = 100, npixon = 8;
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
-  nlopt::opt opt0(nlopt::LN_BOBYQA, npixel);
-  nlopt::opt opt1(nlopt::LD_SLSQP, npixel);
+  nlopt::opt opt0(nlopt::GN_ISRES, npixel);
+  nlopt::opt opt1(nlopt::LN_BOBYQA, npixel);
+  nlopt::opt opt2(nlopt::LD_SLSQP, npixel);
   vector<double> x(npixel), x0(npixel), x_old(npixel);
   void *args = (void *)&pixon;
   double minf_old, num_old, minf, num;
@@ -192,9 +196,19 @@ void test_nlopt()
   opt1.set_ftol_abs(1.0e-15);
   opt1.set_xtol_abs(1.0e-15);
 
+  opt2.set_min_objective(func_nlopt, args);
+  opt2.set_lower_bounds(-100.0);
+  opt2.set_upper_bounds(1.0);
+  opt2.set_maxeval(10000);
+  //opt2.set_xtol_rel(1e-11);
+  //opt2.set_ftol_rel(1e-11);
+  opt2.set_ftol_abs(1.0e-15);
+  opt2.set_xtol_abs(1.0e-15);
+
   num_old = pixon.compute_pixon_number();
-  opt0.optimize(x, minf_old);
+  //opt0.optimize(x, minf_old);
   opt1.optimize(x, minf_old);
+  opt2.optimize(x, minf_old);
   cout<<minf_old<<"  "<<num_old<<endl;
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
@@ -205,8 +219,9 @@ void test_nlopt()
 
     pixon.update_pixon_map();
     num = pixon.compute_pixon_number();
-    opt0.optimize(x, minf);
+    //opt0.optimize(x, minf);
     opt1.optimize(x, minf);
+    opt2.optimize(x, minf);
     cout<<minf<<"  "<<num<<endl;
 
     if(minf_old - minf < num - num_old)
@@ -221,7 +236,7 @@ void test_nlopt()
   
   ofstream fout;
   double xr;
-  fout.open("data/resp.txt");
+  fout.open("data/resp_nlopt.txt");
   for(i=0; i<npixel; i++)
   {
     xr = exp(-0.5 * pow(pixon.dt*i-300.0, 2)/(50.0*50.0)) * 1.0/sqrt(2.0*M_PI)/50.0;
@@ -229,7 +244,7 @@ void test_nlopt()
   }
   fout.close();
 
-  fout.open("data/line_sim.txt");
+  fout.open("data/line_sim_nlopt.txt");
   for(i=0; i<line.size; i++)
   {
     fout<<line.time[i]<<"  "<<itline[i]<<endl;

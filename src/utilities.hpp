@@ -108,6 +108,7 @@ class PixonFFT:public DataFFT
     void convolve(const double *pseudo_img, unsigned int *pixon_map, double *conv);
     /* reduce the minimum pixon size */
     void reduce_pixon_min();
+    unsigned int get_ipxion_min();
 
     friend class Pixon;
 
@@ -115,6 +116,7 @@ class PixonFFT:public DataFFT
     unsigned int npixon;  /* number of pixons */
     unsigned int ipixon_min;
     double *pixon_sizes; /* sizes of pixons */
+    double *pixon_sizes_num;
 };
 
 class Pixon
@@ -124,14 +126,16 @@ class Pixon
     Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon);
     ~Pixon();
     double interp(double t);
-    void compute_rm_pixon(const vector<double> &x);
     void compute_rm_pixon(const double *x);
-    double chisquare(const vector<double> &x);
-    double chisquare(const double *x);
-    void chisquare_grad(const vector<double> &x, vector<double> &grad);
-    void chisquare_grad(const double *x, double *grad);
+    double compute_chisquare(const double *x);
+    double compute_mem(const double *x);
+    void compute_chisquare_grad(const double *x);
+    void compute_chisquare_grad_pixon();
+    void compute_mem_grad(const double *x);
     double compute_pixon_number();
-    void update_pixon_map();
+    void update_pixon_map_all();
+    void update_pixon_map(unsigned int);
+    bool update_pixon_map();
 
     Data cont, line;
     RMFFT rmfft;
@@ -143,9 +147,14 @@ class Pixon
     double *pseudo_image;
 
     double dt; 
+    double chisq;
+    double mem;
     double *rmline;
     double *itline; /* interpolation */
     double *residual; 
+    double *grad_pixon;
+    double *grad_chisq;
+    double *grad_mem;
 
   private:
 };

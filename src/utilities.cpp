@@ -13,6 +13,8 @@
 
 #include "utilities.hpp"
 
+#define EPS (1.0e-100)
+
 using namespace std;
 
 /*==================================================================*/
@@ -334,10 +336,13 @@ PixonFFT::PixonFFT(unsigned int npixel, unsigned int npixon)
 
   ipixon_min = npixon-1;
   pixon_sizes = new double[npixon];
+  pixon_sizes_num = new double[npixon];
   for(i=0; i<npixon; i++)
   {
     pixon_sizes[i] = i+1;
+    pixon_sizes_num[i] = 0;
   }
+  pixon_sizes_num[ipixon_min] = npixel;
 }
 
 PixonFFT::~PixonFFT()
@@ -361,23 +366,26 @@ void PixonFFT::convolve(const double *pseudo_img, unsigned int *pixon_map, doubl
   /* loop over all pixon sizes */
   for(ip=ipixon_min; ip<npixon; ip++)
   {
-    psize = pixon_sizes[ip];
-    /* setup resp */
-    for(j=0; j<nd_fft/2; j++)
+    if(pixon_sizes_num[ip] > 0)
     {
-      resp_real[j] = pixon_function(j, 0, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (j)*(j)/psize/psize);
-    }
-    for(j=nd_fft-1; j>=nd_fft/2; j--)
-    {
-      resp_real[j] = pixon_function(j, nd_fft, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (nd_fft-j)*(nd_fft-j)/psize/psize);
-    }
-    fftw_execute(presp);
-    
-    DataFFT::convolve_simple(conv_tmp);
-    for(j=0; j<nd; j++)
-    {
-      if(pixon_map[j] == ip)
-        conv[j] = conv_tmp[j];
+      psize = pixon_sizes[ip];
+      /* setup resp */
+      for(j=0; j<nd_fft/2; j++)
+      {
+        resp_real[j] = pixon_function(j, 0, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (j)*(j)/psize/psize);
+      }
+      for(j=nd_fft-1; j>=nd_fft/2; j--)
+      {
+        resp_real[j] = pixon_function(j, nd_fft, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (nd_fft-j)*(nd_fft-j)/psize/psize);
+      }
+      fftw_execute(presp);
+      
+      DataFFT::convolve_simple(conv_tmp);
+      for(j=0; j<nd; j++)
+      {
+        if(pixon_map[j] == ip)
+          conv[j] = conv_tmp[j];
+      }
     }
   }
 
@@ -392,6 +400,11 @@ void PixonFFT::reduce_pixon_min()
     ipixon_min--;
   }
 }
+
+unsigned int PixonFFT::get_ipxion_min()
+{
+  return ipixon_min;
+}
 /*==================================================================*/
 /* class Pixon */
 
@@ -401,6 +414,11 @@ Pixon::Pixon()
   pixon_map = NULL; 
   image = pseudo_image = NULL;
   rmline = NULL;
+  itline = NULL;
+  residual = NULL;
+  grad_chisq = NULL;
+  grad_pixon = NULL;
+  grad_mem = NULL;
 }
 
 Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
@@ -412,6 +430,9 @@ Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
   rmline = new double[cont.size];
   itline = new double[line.size];
   residual = new double[line.size];
+  grad_pixon = new double[npixel];
+  grad_mem = new double[npixel];
+  grad_chisq = new double[npixel];
 
   dt = cont.time[1]-cont.time[0];
   unsigned int i;
@@ -431,6 +452,9 @@ Pixon::~Pixon()
     delete[] rmline;
     delete[] itline;
     delete[] residual;
+    delete[] grad_chisq;
+    delete[] grad_pixon;
+    delete[] grad_mem;
   }
 }
 
@@ -471,9 +495,8 @@ void Pixon::compute_rm_pixon(const double *x)
   }
 }
 
-double Pixon::chisquare(const double *x)
+double Pixon::compute_chisquare(const double *x)
 {
-  double chisq;
   int i;
 
   /* calculate chi square */
@@ -486,7 +509,32 @@ double Pixon::chisquare(const double *x)
   return chisq;
 }
 
-void Pixon::chisquare_grad(const double *x, double *grad)
+double Pixon::compute_mem(const double *x)
+{
+  double Itot, num, alpha;
+  int i, j;
+
+  Itot = 0.0;
+  for(i=0; i<npixel; i++)
+  {
+    Itot += image[i];
+  }
+  
+  num = compute_pixon_number();
+  alpha = log(num)/log(npixel);
+
+  mem = 0.0;
+  for(i=0; i<npixel; i++)
+  {
+    mem += image[i]/Itot * log(image[i]/Itot + EPS);
+  }
+  
+  mem *= 2.0*alpha;
+
+  return mem;
+}
+
+void Pixon::compute_chisquare_grad(const double *x)
 {
   int i, k, j, joffset, jrange1, jrange2;
   double psize, t, tau, cont_intp, grad_in, grad_out, K;
@@ -511,7 +559,65 @@ void Pixon::chisquare_grad(const double *x, double *grad)
       }
       grad_out += grad_in * residual[k]/line.error[k]/line.error[k];
     }
-    grad[i] = grad_out * 2.0*dt * pseudo_image[i];
+    grad_chisq[i] = grad_out * 2.0*dt * pseudo_image[i];
+  }
+}
+
+/* calculate chisqure gradient with respect to pixon size */
+void Pixon::compute_chisquare_grad_pixon()
+{
+  int i, k, j, joffset, jrange1, jrange2;
+  double psize, t, tau, cont_intp, grad_in, grad_out, K;
+  for(i=0; i<npixel; i++)
+  {
+    grad_out = 0.0;
+    psize = pixon_map[i] + 1;
+    joffset = 5 * psize;
+    jrange1 = fmax(i - joffset, 0.0);
+    jrange2 = fmin(i + joffset, npixel);
+    
+    for(k=0; k<line.size; k++)
+    {          
+      grad_in = 0.0;
+      t = line.time[k];
+      for(j=jrange1; j<jrange2; j++)
+      {
+        tau = j * dt;
+        cont_intp = interp(t-tau);
+        K =  pixon_function(j, i, psize) - pixon_function(j, i, psize-1.0);
+        grad_in += K * cont_intp;
+      }
+      grad_out += grad_in * residual[k]/line.error[k]/line.error[k];
+    }
+    grad_pixon[i] = grad_out * 2.0*dt * pseudo_image[i];
+  }
+}
+
+void Pixon::compute_mem_grad(const double *x)
+{
+  double Itot, num, alpha, grad_in, psize, K;
+  int i, j, jrange1, jrange2, joffset;
+  Itot = 0.0;
+  for(i=0; i<npixel; i++)
+  {
+    Itot += image[i];
+  }
+  num = compute_pixon_number();
+  alpha = log(num)/log(npixel);
+  
+  for(i=0; i<npixel; i++)
+  {       
+    grad_in = 0.0;
+    psize = pfft.pixon_sizes[pixon_map[i]];
+    joffset = 5 * psize;
+    jrange1 = fmax(i - joffset, 0.0);
+    jrange2 = fmin(i + joffset, npixel);
+    for(j=jrange1; j<jrange2; j++)
+    {
+      K = pixon_function(i, j, psize);
+      grad_in += (1.0 + log(image[i]/Itot + EPS)) * K;
+    } 
+    grad_mem[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
   }
 }
 
@@ -529,14 +635,50 @@ double Pixon::compute_pixon_number()
   return num;
 }
 
-void Pixon::update_pixon_map()
+void Pixon::update_pixon_map_all()
 {
   int i;
+  pfft.pixon_sizes_num[pfft.ipixon_min] = 0;
   pfft.reduce_pixon_min();
+  pfft.pixon_sizes_num[pfft.ipixon_min] = npixel;
   for(i=0; i<npixel; i++)
   {
     pixon_map[i]--;
   }
+}
+
+void Pixon::update_pixon_map(unsigned int ip)
+{
+  pfft.pixon_sizes_num[pixon_map[ip]]--;
+  pixon_map[ip]--;
+  pfft.pixon_sizes_num[pixon_map[ip]]++;
+  if(pfft.ipixon_min > pixon_map[ip])
+  {
+    pfft.ipixon_min = pixon_map[ip];
+  }
+}
+
+bool Pixon::update_pixon_map()
+{
+  int i;
+  double psize, dnum, num;
+  bool flag=false;
+
+  cout<<"update pixon map."<<endl;
+  compute_chisquare_grad_pixon();
+  for(i=0; i<npixel; i++)
+  {
+    psize = pfft.pixon_sizes[pixon_map[i]];
+    num = 1.0/(sqrt(2.0*M_PI) * psize);
+    dnum = 1.0/(sqrt(2.0*M_PI) * (psize-1.0)) - num;
+    if( grad_pixon[i] > dnum && pixon_map[i] > 1)
+    {
+      update_pixon_map(i);
+      cout<<"decrease "<< i <<"-th pixel "<<pfft.pixon_sizes[pixon_map[i]]<<endl;
+      flag=true;
+    }
+  }
+  return flag;
 }
 /*==================================================================*/
 
@@ -548,24 +690,41 @@ double pixon_function(double x, double y, double psize)
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)
 {
   Pixon *pixon = (Pixon *)f_data;
-  double chisq;
+  double chisq, mem;
 
   pixon->compute_rm_pixon(x.data());
   if (!grad.empty()) 
   {
-    pixon->chisquare_grad(x.data(), grad.data());
+    int i;
+    
+    pixon->compute_chisquare_grad(x.data());
+    pixon->compute_mem_grad(x.data());
+    
+    for(i=0; i<grad.size(); i++)
+      grad[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
   }
-  chisq = pixon->chisquare(x.data());
-  return chisq;
+  chisq = pixon->compute_chisquare(x.data());
+  mem = pixon->compute_mem(x.data());
+  return chisq + mem;
 }
 
-tnc_function func_tnc;
 int func_tnc(double x[], double *f, double g[], void *state)
 {
   Pixon *pixon = (Pixon *)state;
+  int i;
+  double chisq, mem;
 
   pixon->compute_rm_pixon(x);
-  pixon->chisquare_grad(x, g);
-  *f = pixon->chisquare(x);
+  pixon->compute_chisquare_grad(x);
+  pixon->compute_mem_grad(x);
+  
+  chisq = pixon->compute_chisquare(x);
+  mem = pixon->compute_mem(x);
+
+  *f = chisq + mem;
+
+  for(i=0; i<pixon->npixel; i++)
+    g[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
+
   return 0;
 }

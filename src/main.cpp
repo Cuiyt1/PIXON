@@ -22,15 +22,14 @@ using namespace std;
 
 void test();
 void test_nlopt();
-void test_tnc();
-
+void run_uniform();
 void run();
 
 int main(int argc, char ** argv)
 {
   //test_nlopt();
-  //test_tnc();
-  run();
+  run_uniform();
+  //run();
   return 0;
 }
 
@@ -45,11 +44,11 @@ void run()
 
   const unsigned int npixel = 100;
   unsigned int npixon = 10;
-  unsigned int i;
+  unsigned int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
 
-  double f, f_old, df, num, num_old, dnum;
+  double f, f_old, df, num, num_old, dnum, chisq, chisq_old, dchisq;
   double *image=new double[npixel], *itline=new double[line.size];
 
   /* TNC */
@@ -84,17 +83,19 @@ void run()
   
   f_old = f;
   num_old = pixon.compute_pixon_number();
-  cout<<f_old<<"  "<<num_old<<endl;
+  chisq_old = pixon.chisq;
+  cout<<f_old<<"  "<<num_old<<"   "<<chisq_old<<endl;
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), npixel*sizeof(double));
-
+  pixon.update_pixon_map();
+  
+  iter = 0;
   do
   {
-    npixon--;
-    cout<<"npixon:"<<npixon<<endl;
+    iter++;
+    cout<<"iter:"<<iter<<endl;
 
-    pixon.update_pixon_map();
     num = pixon.compute_pixon_number();
     
     opt0.optimize(x, f);
@@ -103,20 +104,26 @@ void run()
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    cout<<f<<"  "<<num<<endl;
+    chisq = pixon.chisq;
+    cout<<f<<"  "<<num<<"  "<<chisq<<endl;
     
     df = f-f_old;
     dnum = num - num_old;
+    dchisq = chisq - chisq_old;
 
-    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    //if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    //  break;
+
+    if(!pixon.update_pixon_map())
       break;
 
     num_old = num;
     f_old = f;
+    chisq_old = chisq;
     memcpy(image, pixon.image, npixel*sizeof(double));
     memcpy(itline, pixon.itline, line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), npixel*sizeof(double));
-  }while(npixon>0);
+  }while(pixon.pfft.get_ipxion_min() > 0);
 
   ofstream fout;
   fout.open("data/resp_tnc.txt");
@@ -138,7 +145,7 @@ void run()
 
 }
 
-void test_tnc()
+void run_uniform()
 {
   Data cont, line;
   string fcon, fline;
@@ -152,19 +159,18 @@ void test_tnc()
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
-  double f_old, num_old, num, df, dnum;
+  double f, f_old, num_old, num, df, dnum, chisq, chisq_old, dchisq;
   double *image=new double[npixel], *itline=new double[line.size];
  
   int rc, maxCGit = npixel, maxnfeval = 2000, nfeval, niter;
-  double f, g[npixel], x[npixel], x_old[npixel], low[npixel], up[npixel],
+  double low[npixel], up[npixel],
     eta = -1.0, stepmx = 10000.0,
     accuracy = 1.0e-15, fmin = cont.size, ftol = -1.0, xtol = -1.0, pgtol = -1.0,
     rescale = -1.0;
 
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, npixel);
-  vector<double> x_nlopt(npixel);
-  double minf;
+  vector<double> x(npixel), g(npixel), x_old(npixel);
   opt0.set_min_objective(func_nlopt, args);
   opt0.set_lower_bounds(-100.0);
   opt0.set_upper_bounds(1.0);
@@ -182,51 +188,51 @@ void test_tnc()
     //x[i] = log(1.0/sqrt(2.0*M_PI)/10.0 * exp( - 0.5*pow((pixon.dt*i - 300.0)/10.0, 2.0) ) + 1.0e-10);
   }
   
-  memcpy(x_nlopt.data(), x, npixel*sizeof(double));
-  opt0.optimize(x_nlopt, minf);
-  memcpy(x, x_nlopt.data(), npixel*sizeof(double));
+  opt0.optimize(x, f);
 
-  rc = tnc(npixel, x, &f, g, func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+  rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
   
   f_old = f;
   num_old = pixon.compute_pixon_number();
+  chisq_old = pixon.chisq;
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
-  memcpy(x_old, x, npixel*sizeof(double));
-  cout<<f_old<<"  "<<num_old<<endl;
+  memcpy(x_old.data(), x.data(), npixel*sizeof(double));
+  cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
   
   do
   {
     npixon--;
     cout<<"npixon:"<<npixon<<endl;
 
-    pixon.update_pixon_map();
+    pixon.update_pixon_map_all();
     num = pixon.compute_pixon_number();
     
-    memcpy(x_nlopt.data(), x, npixel*sizeof(double));
-    opt0.optimize(x_nlopt, minf);
-    memcpy(x, x_nlopt.data(), npixel*sizeof(double));
+    opt0.optimize(x, f);
 
-    rc = tnc(npixel, x, &f, g, func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+    rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    cout<<f<<"  "<<num<<endl;
+    chisq = pixon.chisq;
+    cout<<f<<"  "<<num<<"  "<<chisq<<endl;
     
     df = f-f_old;
     dnum = num - num_old;
+    dchisq = chisq - chisq_old;
 
-    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    if(-dchisq < dnum * (1.0 + 1.0/sqrt(2.0*num)))
       break;
 
     num_old = num;
     f_old = f;
+    chisq_old = chisq;
     memcpy(image, pixon.image, npixel*sizeof(double));
     memcpy(itline, pixon.itline, line.size*sizeof(double));
-    memcpy(x_old, x, npixel*sizeof(double));
-  }while(npixon>0);
+    memcpy(x_old.data(), x.data(), npixel*sizeof(double));
+  }while(npixon>1);
 
   ofstream fout;
   fout.open("data/resp_tnc.txt");
@@ -313,7 +319,7 @@ void test_nlopt()
     npixon--;
     cout<<"npixon:"<<npixon<<endl;
 
-    pixon.update_pixon_map();
+    pixon.update_pixon_map_all();
     num = pixon.compute_pixon_number();
     //opt0.optimize(x, minf);
     opt1.optimize(x, minf);

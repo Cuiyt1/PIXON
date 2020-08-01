@@ -24,11 +24,118 @@ void test();
 void test_nlopt();
 void test_tnc();
 
+void run();
+
 int main(int argc, char ** argv)
 {
-  test_nlopt();
-  test_tnc();
+  //test_nlopt();
+  //test_tnc();
+  run();
   return 0;
+}
+
+void run()
+{
+  Data cont, line;
+  string fcon, fline;
+  fcon="data/con.txt";
+  cont.load(fcon);
+  fline = "data/line.txt";
+  line.load(fline);
+
+  const unsigned int npixel = 100;
+  unsigned int npixon = 10;
+  unsigned int i;
+  Pixon pixon(cont, line, npixel, npixon);
+  void *args = (void *)&pixon;
+
+  double f, f_old, df, num, num_old, dnum;
+  double *image=new double[npixel], *itline=new double[line.size];
+
+  /* TNC */
+  int rc, maxCGit = npixel, maxnfeval = 2000, nfeval, niter;
+  double low[npixel], up[npixel], eta = -1.0, stepmx = 10000.0,
+    accuracy = 1.0e-15, fmin = cont.size, ftol = -1.0, xtol = -1.0, pgtol = -1.0,
+    rescale = -1.0;
+  
+  /* NLopt */
+  nlopt::opt opt0(nlopt::LN_BOBYQA, npixel);
+  vector<double> x(npixel), g(npixel), x_old(npixel);
+  opt0.set_min_objective(func_nlopt, args);
+  opt0.set_lower_bounds(-100.0);
+  opt0.set_upper_bounds(1.0);
+  opt0.set_maxeval(10000);
+  //opt0.set_xtol_rel(1e-11);
+  //opt0.set_ftol_rel(1e-11);
+  opt0.set_ftol_abs(1.0e-15);
+  opt0.set_xtol_abs(1.0e-15);
+
+  for(i=0; i<npixel; i++)
+  {
+    low[i] = -100.0;
+    up[i] =  1.0;
+    x[i] = log(1.0/(npixel * pixon.dt));
+  }
+
+  opt0.optimize(x, f);
+  rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+  
+  f_old = f;
+  num_old = pixon.compute_pixon_number();
+  cout<<f_old<<"  "<<num_old<<endl;
+  memcpy(image, pixon.image, npixel*sizeof(double));
+  memcpy(itline, pixon.itline, line.size*sizeof(double));
+  memcpy(x_old.data(), x.data(), npixel*sizeof(double));
+
+  do
+  {
+    npixon--;
+    cout<<"npixon:"<<npixon<<endl;
+
+    pixon.update_pixon_map();
+    num = pixon.compute_pixon_number();
+    
+    opt0.optimize(x, f);
+
+    rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+    
+    cout<<f<<"  "<<num<<endl;
+    
+    df = f-f_old;
+    dnum = num - num_old;
+
+    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+      break;
+
+    num_old = num;
+    f_old = f;
+    memcpy(image, pixon.image, npixel*sizeof(double));
+    memcpy(itline, pixon.itline, line.size*sizeof(double));
+    memcpy(x_old.data(), x.data(), npixel*sizeof(double));
+  }while(npixon>0);
+
+  ofstream fout;
+  fout.open("data/resp_tnc.txt");
+  for(i=0; i<npixel; i++)
+  {
+    fout<<pixon.dt*i<<"  "<<exp(x_old[i])<<"   "<<image[i]<<"  "<<pixon_function(pixon.dt*i, 300.0, 50.0)<<endl;
+  }
+  fout.close();
+
+  fout.open("data/line_sim_tnc.txt");
+  for(i=0; i<line.size; i++)
+  {
+    fout<<line.time[i]<<"  "<<itline[i]<<endl;
+  }
+  fout.close();
+
+  delete[] image;
+  delete[] itline;
+
 }
 
 void test_tnc()

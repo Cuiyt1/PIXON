@@ -372,11 +372,11 @@ void PixonFFT::convolve(const double *pseudo_img, unsigned int *pixon_map, doubl
       /* setup resp */
       for(j=0; j<nd_fft/2; j++)
       {
-        resp_real[j] = pixon_function(j, 0, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (j)*(j)/psize/psize);
+        resp_real[j] = pixon_function(j, 0, psize);
       }
       for(j=nd_fft-1; j>=nd_fft/2; j--)
       {
-        resp_real[j] = pixon_function(j, nd_fft, psize); //1.0/sqrt(2.0*M_PI)/psize * exp(-0.5 * (nd_fft-j)*(nd_fft-j)/psize/psize);
+        resp_real[j] = pixon_function(j, nd_fft, psize);
       }
       fftw_execute(presp);
       
@@ -542,7 +542,7 @@ void Pixon::compute_chisquare_grad(const double *x)
   {
     grad_out = 0.0;
     psize = pixon_map[i] + 1;
-    joffset = 5 * psize;
+    joffset = 3 * psize;
     jrange1 = fmax(i - joffset, 0);
     jrange2 = fmin(i + joffset, npixel);
     
@@ -572,7 +572,7 @@ void Pixon::compute_chisquare_grad_pixon()
   {
     grad_out = 0.0;
     psize = pixon_map[i] + 1;
-    joffset = 5 * psize;
+    joffset = 3 * psize;
     jrange1 = fmax(i - joffset, 0.0);
     jrange2 = fmin(i + joffset, npixel);
     
@@ -609,7 +609,7 @@ void Pixon::compute_mem_grad(const double *x)
   {       
     grad_in = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
-    joffset = 5 * psize;
+    joffset = 3 * psize;
     jrange1 = fmax(i - joffset, 0.0);
     jrange2 = fmin(i + joffset, npixel);
     for(j=jrange1; j<jrange2; j++)
@@ -630,7 +630,7 @@ double Pixon::compute_pixon_number()
   for(i=0; i<pfft.nd; i++)
   {
     psize = pfft.pixon_sizes[pixon_map[i]];
-    num += 1.0/(sqrt(2.0*M_PI) * psize);
+    num += 1.0/(sqrt(2.0*M_PI) * psize * norm_3sigma);
   }
   return num;
 }
@@ -669,8 +669,8 @@ bool Pixon::update_pixon_map()
   for(i=0; i<npixel; i++)
   {
     psize = pfft.pixon_sizes[pixon_map[i]];
-    num = 1.0/(sqrt(2.0*M_PI) * psize);
-    dnum = 1.0/(sqrt(2.0*M_PI) * (psize-1.0)) - num;
+    num = 1.0/(sqrt(2.0*M_PI) * psize * norm_3sigma);
+    dnum = 1.0/(sqrt(2.0*M_PI) * (psize-1.0) * norm_3sigma) - num;
     if( grad_pixon[i] > dnum * (1.0 + 1.0/sqrt(2.0*num)) && pixon_map[i] > 1)
     {
       update_pixon_map(i);
@@ -684,7 +684,10 @@ bool Pixon::update_pixon_map()
 
 double pixon_function(double x, double y, double psize)
 {
-  return 1.0/sqrt(2.0*M_PI)/psize * exp( -0.5*(y-x)*(y-x)/psize/psize );
+  if(fabs(y-x) <= 3.0*psize)
+    return 1.0/sqrt(2.0*M_PI)/psize/norm_3sigma * exp( -0.5*(y-x)*(y-x)/psize/psize );
+  else 
+    return 0.0;
 }
 
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)

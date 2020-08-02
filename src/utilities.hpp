@@ -21,6 +21,8 @@
 
 #include "tnc.h"
 
+#define norm_3sigma (0.9973)
+
 using namespace std;
 
 class Data;

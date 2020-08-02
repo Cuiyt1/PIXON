@@ -112,11 +112,11 @@ class PixonFFT:public DataFFT
 
     friend class Pixon;
 
-  protected:
     unsigned int npixon;  /* number of pixons */
     unsigned int ipixon_min;
     double *pixon_sizes; /* sizes of pixons */
     double *pixon_sizes_num;
+  protected:
 };
 
 class Pixon

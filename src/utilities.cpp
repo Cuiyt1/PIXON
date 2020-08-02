@@ -671,7 +671,7 @@ bool Pixon::update_pixon_map()
     psize = pfft.pixon_sizes[pixon_map[i]];
     num = 1.0/(sqrt(2.0*M_PI) * psize);
     dnum = 1.0/(sqrt(2.0*M_PI) * (psize-1.0)) - num;
-    if( grad_pixon[i] > dnum && pixon_map[i] > 1)
+    if( grad_pixon[i] > dnum * (1.0 + 1.0/sqrt(2.0*num)) && pixon_map[i] > 1)
     {
       update_pixon_map(i);
       cout<<"decrease "<< i <<"-th pixel "<<pfft.pixon_sizes[pixon_map[i]]<<endl;

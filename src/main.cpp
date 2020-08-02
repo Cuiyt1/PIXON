@@ -111,9 +111,6 @@ void run()
     dnum = num - num_old;
     dchisq = chisq - chisq_old;
 
-    //if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
-    //  break;
-
     if(!pixon.update_pixon_map())
       break;
 
@@ -201,8 +198,7 @@ void run_uniform()
   memcpy(itline, pixon.itline, line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), npixel*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
-  
-  do
+  while(npixon>1)
   {
     npixon--;
     cout<<"npixon:"<<npixon<<endl;
@@ -232,7 +228,7 @@ void run_uniform()
     memcpy(image, pixon.image, npixel*sizeof(double));
     memcpy(itline, pixon.itline, line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), npixel*sizeof(double));
-  }while(npixon>1);
+  }
 
   ofstream fout;
   fout.open("data/resp_tnc.txt");
@@ -314,7 +310,7 @@ void test_nlopt()
   cout<<minf_old<<"  "<<num_old<<endl;
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
-  do
+  while(npixon>1)
   {
     npixon--;
     cout<<"npixon:"<<npixon<<endl;
@@ -334,7 +330,7 @@ void test_nlopt()
     memcpy(image, pixon.image, npixel*sizeof(double));
     memcpy(itline, pixon.itline, line.size*sizeof(double));
     x_old = x;
-  }while(npixon>0);
+  }
   
   ofstream fout;
   double xr;

@@ -18,6 +18,38 @@
 using namespace std;
 
 /*==================================================================*/
+/* class PixonFunc */
+
+PixonFunc pixon_function;
+PixonNorm pixon_norm;
+
+double gaussian(double x, double y, double psize)
+{
+  if(fabs(y-x) <= 3 * psize)
+    return 1.0/sqrt(2.0*M_PI)/psize/norm_3sigma * exp( -0.5*(y-x)*(y-x)/psize/psize );
+  else 
+    return 0.0;
+}
+
+double gaussian_norm(double psize)
+{
+  return 1.0/sqrt(2.0*M_PI)/psize/norm_3sigma;
+}
+
+double parabloid(double x, double y, double psize)
+{
+  if(fabs(y-x) <= 3 * psize)
+    return 1.0/(psize * 4.0) * (1.0 - (y-x)*(y-x)/(3.0*psize * 3.0*psize));
+  else 
+    return 0.0;
+}
+
+double parabloid_norm(double psize)
+{
+  return 1.0/(psize * 4.0);
+}
+
+/*==================================================================*/
 /* class Data */
 Data::Data()
 {
@@ -330,7 +362,7 @@ PixonFFT::PixonFFT()
   pixon_sizes = NULL;
 }
 PixonFFT::PixonFFT(unsigned int npixel, unsigned int npixon)
-      :npixon(npixon), DataFFT(npixel, 1.0, npixon*3)
+      :npixon(npixon), DataFFT(npixel, 1.0, npixon)
 {
   unsigned int i;
 
@@ -339,7 +371,7 @@ PixonFFT::PixonFFT(unsigned int npixel, unsigned int npixon)
   pixon_sizes_num = new double[npixon];
   for(i=0; i<npixon; i++)
   {
-    pixon_sizes[i] = i+1;
+    pixon_sizes[i] = (i+1)/3.0;
     pixon_sizes_num[i] = 0;
   }
   pixon_sizes_num[ipixon_min] = npixel;
@@ -401,6 +433,15 @@ void PixonFFT::reduce_pixon_min()
   }
 }
 
+/* reduce the minimum pixon size */
+void PixonFFT::increase_pixon_min()
+{
+  if(ipixon_min < npixon-1)
+  {
+    ipixon_min++;
+  }
+}
+
 unsigned int PixonFFT::get_ipxion_min()
 {
   return ipixon_min;
@@ -417,7 +458,8 @@ Pixon::Pixon()
   itline = NULL;
   residual = NULL;
   grad_chisq = NULL;
-  grad_pixon = NULL;
+  grad_pixon_low = NULL;
+  grad_pixon_up = NULL;
   grad_mem = NULL;
 }
 
@@ -430,7 +472,8 @@ Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
   rmline = new double[cont.size];
   itline = new double[line.size];
   residual = new double[line.size];
-  grad_pixon = new double[npixel];
+  grad_pixon_low = new double[npixel];
+  grad_pixon_up = new double[npixel];
   grad_mem = new double[npixel];
   grad_chisq = new double[npixel];
 
@@ -453,7 +496,8 @@ Pixon::~Pixon()
     delete[] itline;
     delete[] residual;
     delete[] grad_chisq;
-    delete[] grad_pixon;
+    delete[] grad_pixon_low;
+    delete[] grad_pixon_up;
     delete[] grad_mem;
   }
 }
@@ -541,7 +585,7 @@ void Pixon::compute_chisquare_grad(const double *x)
   for(i=0; i<npixel; i++)
   {
     grad_out = 0.0;
-    psize = pixon_map[i] + 1;
+    psize = pfft.pixon_sizes[pixon_map[i]];
     joffset = 3 * psize;
     jrange1 = fmax(i - joffset, 0);
     jrange2 = fmin(i + joffset, npixel);
@@ -563,15 +607,19 @@ void Pixon::compute_chisquare_grad(const double *x)
   }
 }
 
-/* calculate chisqure gradient with respect to pixon size */
-void Pixon::compute_chisquare_grad_pixon()
+/* calculate chisqure gradient with respect to pixon size 
+ * when pixon size decreases, chisq decreases, 
+ * so chisq gradient is positive 
+ */
+void Pixon::compute_chisquare_grad_pixon_low()
 {
   int i, k, j, joffset, jrange1, jrange2;
-  double psize, t, tau, cont_intp, grad_in, grad_out, K;
+  double psize, psize_low, t, tau, cont_intp, grad_in, grad_out, K;
   for(i=0; i<npixel; i++)
   {
     grad_out = 0.0;
-    psize = pixon_map[i] + 1;
+    psize = pfft.pixon_sizes[pixon_map[i]];
+    psize_low = pfft.pixon_sizes[pixon_map[i]-1];
     joffset = 3 * psize;
     jrange1 = fmax(i - joffset, 0.0);
     jrange2 = fmin(i + joffset, npixel);
@@ -584,12 +632,46 @@ void Pixon::compute_chisquare_grad_pixon()
       {
         tau = j * dt;
         cont_intp = interp(t-tau);
-        K =  pixon_function(j, i, psize) - pixon_function(j, i, psize-1.0);
+        K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_low);
         grad_in += K * cont_intp;
       }
       grad_out += grad_in * residual[k]/line.error[k]/line.error[k];
     }
-    grad_pixon[i] = grad_out * 2.0*dt * pseudo_image[i];
+    grad_pixon_low[i] = grad_out * 2.0*dt * pseudo_image[i];
+  }
+}
+
+/* calculate chisqure gradient with respect to pixon size 
+ * when pixon size increases, chisq increases, 
+ * so chisq gradient is positive too
+ */
+void Pixon::compute_chisquare_grad_pixon_up()
+{
+  int i, k, j, joffset, jrange1, jrange2;
+  double psize, psize_up, t, tau, cont_intp, grad_in, grad_out, K;
+  for(i=0; i<npixel; i++)
+  {
+    grad_out = 0.0;
+    psize = pfft.pixon_sizes[pixon_map[i]];
+    psize = pfft.pixon_sizes[pixon_map[i]+1];
+    joffset = 3 * psize;
+    jrange1 = fmax(i - joffset, 0.0);
+    jrange2 = fmin(i + joffset, npixel);
+    
+    for(k=0; k<line.size; k++)
+    {          
+      grad_in = 0.0;
+      t = line.time[k];
+      for(j=jrange1; j<jrange2; j++)
+      {
+        tau = j * dt;
+        cont_intp = interp(t-tau);
+        K =  pixon_function(j, i, psize_up) - pixon_function(j, i, psize);
+        grad_in += K * cont_intp;
+      }
+      grad_out += grad_in * residual[k]/line.error[k]/line.error[k];
+    }
+    grad_pixon_up[i] = grad_out * 2.0*dt * pseudo_image[i];
   }
 }
 
@@ -630,12 +712,12 @@ double Pixon::compute_pixon_number()
   for(i=0; i<pfft.nd; i++)
   {
     psize = pfft.pixon_sizes[pixon_map[i]];
-    num += 1.0/(sqrt(2.0*M_PI) * psize * norm_3sigma);
+    num += pixon_norm(psize);
   }
   return num;
 }
 
-void Pixon::update_pixon_map_all()
+void Pixon::reduce_pixon_map_all()
 {
   int i;
   pfft.pixon_sizes_num[pfft.ipixon_min] = 0;
@@ -647,7 +729,19 @@ void Pixon::update_pixon_map_all()
   }
 }
 
-void Pixon::update_pixon_map(unsigned int ip)
+void Pixon::increase_pixon_map_all()
+{
+  int i;
+  pfft.pixon_sizes_num[pfft.ipixon_min] = 0;
+  pfft.increase_pixon_min();
+  pfft.pixon_sizes_num[pfft.ipixon_min] = npixel;
+  for(i=0; i<npixel; i++)
+  {
+    pixon_map[i]++;
+  }
+}
+
+void Pixon::reduce_pixon_map(unsigned int ip)
 {
   pfft.pixon_sizes_num[pixon_map[ip]]--;
   pixon_map[ip]--;
@@ -658,23 +752,57 @@ void Pixon::update_pixon_map(unsigned int ip)
   }
 }
 
+void Pixon::increase_pixon_map(unsigned int ip)
+{
+  pfft.pixon_sizes_num[pixon_map[ip]]--;
+  pixon_map[ip]++;
+  pfft.pixon_sizes_num[pixon_map[ip]]++;
+}
+
 bool Pixon::update_pixon_map()
 {
   int i;
-  double psize, dnum, num;
+  double psize, psize_low, dnum_low, num;
   bool flag=false;
 
   cout<<"update pixon map."<<endl;
-  compute_chisquare_grad_pixon();
+  compute_chisquare_grad_pixon_low();
+  for(i=0; i<npixel; i++)
+  {
+    if(pixon_map[i] > 1)
+    {
+      psize = pfft.pixon_sizes[pixon_map[i]];
+      psize_low = pfft.pixon_sizes[pixon_map[i]-1];
+      num = pixon_norm(psize);
+      dnum_low = pixon_norm(psize_low) - num;
+      if( grad_pixon_low[i] > dnum_low && pixon_map[i] > 1)
+      {
+        reduce_pixon_map(i);
+        cout<<"decrease "<< i <<"-th pixel to "<<pfft.pixon_sizes[pixon_map[i]]<<endl;
+        flag=true;
+      }
+    }
+  }
+  return flag;
+}
+
+bool Pixon::increase_pixon_map()
+{
+  int i;
+  double psize, dnum_low, dnum_up, num;
+  bool flag=false;
+
+  cout<<"update pixon map."<<endl;
+  compute_chisquare_grad_pixon_up();
   for(i=0; i<npixel; i++)
   {
     psize = pfft.pixon_sizes[pixon_map[i]];
-    num = 1.0/(sqrt(2.0*M_PI) * psize * norm_3sigma);
-    dnum = 1.0/(sqrt(2.0*M_PI) * (psize-1.0) * norm_3sigma) - num;
-    if( grad_pixon[i] > dnum * (1.0 + 1.0/sqrt(2.0*num)) && pixon_map[i] > 1)
+    num = pixon_norm(psize);
+    dnum_up = num - pixon_norm(psize+1.0);
+    if(grad_pixon_up[i] <= dnum_up  && pixon_map[i] < pfft.npixon - 1)
     {
-      update_pixon_map(i);
-      cout<<"decrease "<< i <<"-th pixel "<<pfft.pixon_sizes[pixon_map[i]]<<endl;
+      increase_pixon_map(i);
+      cout<<"increase "<< i <<"-th pixel to "<<pfft.pixon_sizes[pixon_map[i]]<<endl;
       flag=true;
     }
   }
@@ -682,13 +810,6 @@ bool Pixon::update_pixon_map()
 }
 /*==================================================================*/
 
-double pixon_function(double x, double y, double psize)
-{
-  if(fabs(y-x) <= 3.0*psize)
-    return 1.0/sqrt(2.0*M_PI)/psize/norm_3sigma * exp( -0.5*(y-x)*(y-x)/psize/psize );
-  else 
-    return 0.0;
-}
 
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)
 {

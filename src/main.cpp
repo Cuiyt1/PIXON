@@ -27,9 +27,15 @@ void run();
 
 int main(int argc, char ** argv)
 {
+  pixon_function = gaussian;
+  pixon_norm = gaussian_norm;
+
+  //pixon_function = parabloid;
+  //pixon_norm = parabloid_norm;
+
   //test_nlopt();
-  run_uniform();
-  //run();
+  //run_uniform();
+  run();
   return 0;
 }
 
@@ -43,10 +49,11 @@ void run()
   line.load(fline);
 
   const unsigned int npixel = 100;
-  unsigned int npixon = 10;
+  unsigned int npixon = 20;
   unsigned int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
+  bool flag;
 
   double f, f_old, df, num, num_old, dnum, chisq, chisq_old, dchisq;
   double *image=new double[npixel], *itline=new double[line.size];
@@ -59,6 +66,7 @@ void run()
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, npixel);
+  nlopt::opt opt1(nlopt::LD_SLSQP, npixel);
   vector<double> x(npixel), g(npixel), x_old(npixel);
   opt0.set_min_objective(func_nlopt, args);
   opt0.set_lower_bounds(-100.0);
@@ -69,6 +77,16 @@ void run()
   opt0.set_ftol_abs(1.0e-15);
   opt0.set_xtol_abs(1.0e-15);
 
+  opt1.set_min_objective(func_nlopt, args);
+  opt1.set_lower_bounds(-100.0);
+  opt1.set_upper_bounds(1.0);
+  opt1.set_maxeval(10000);
+  //opt1.set_xtol_rel(1e-11);
+  //opt1.set_ftol_rel(1e-11);
+  opt1.set_ftol_abs(1.0e-15);
+  opt1.set_xtol_abs(1.0e-15);
+
+
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
@@ -77,6 +95,7 @@ void run()
   }
 
   opt0.optimize(x, f);
+  //opt1.optimize(x, f);
   rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
@@ -88,8 +107,8 @@ void run()
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), npixel*sizeof(double));
-  pixon.update_pixon_map();
-  
+
+  /* then pixel-dependent pixon size */
   iter = 0;
   do
   {
@@ -99,6 +118,7 @@ void run()
     num = pixon.compute_pixon_number();
     
     opt0.optimize(x, f);
+    //opt1.optimize(x, f);
 
     rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
@@ -111,7 +131,8 @@ void run()
     dnum = num - num_old;
     dchisq = chisq - chisq_old;
 
-    if(!pixon.update_pixon_map())
+    flag = pixon.update_pixon_map();
+    if(!flag)
       break;
 
     num_old = num;
@@ -120,7 +141,7 @@ void run()
     memcpy(image, pixon.image, npixel*sizeof(double));
     memcpy(itline, pixon.itline, line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), npixel*sizeof(double));
-  }while(pixon.pfft.get_ipxion_min() > 0);
+  }while(pixon.pfft.get_ipxion_min() >= 0);
 
   ofstream fout;
   fout.open("data/resp_tnc.txt");
@@ -134,6 +155,13 @@ void run()
   for(i=0; i<line.size; i++)
   {
     fout<<line.time[i]<<"  "<<itline[i]<<endl;
+  }
+  fout.close();
+
+  fout.open("data/pixon_map.txt");
+  for(i=0; i<npixel; i++)
+  {
+    fout<<i<<"  "<<pixon.pixon_map[i]<<endl;
   }
   fout.close();
 
@@ -201,9 +229,9 @@ void run_uniform()
   while(npixon>1)
   {
     npixon--;
-    cout<<"npixon:"<<npixon<<endl;
+    cout<<"npixon:"<<npixon<<",  size: "<<pixon.pfft.pixon_sizes[npixon]<<endl;
 
-    pixon.update_pixon_map_all();
+    pixon.reduce_pixon_map_all();
     num = pixon.compute_pixon_number();
     
     opt0.optimize(x, f);
@@ -315,7 +343,7 @@ void test_nlopt()
     npixon--;
     cout<<"npixon:"<<npixon<<endl;
 
-    pixon.update_pixon_map_all();
+    pixon.reduce_pixon_map_all();
     num = pixon.compute_pixon_number();
     //opt0.optimize(x, minf);
     opt1.optimize(x, minf);

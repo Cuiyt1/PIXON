@@ -22,6 +22,8 @@
 #include "tnc.h"
 
 #define norm_3sigma (0.9973)
+#define norm_2sigma (0.9545)
+#define norm_1sigma (0.6827)
 
 using namespace std;
 
@@ -30,6 +32,20 @@ class DataFFT;
 class RMFFT;
 class PixonFFT;
 class Pixon;
+
+/* 
+ * pixon functions
+ * 
+ */
+typedef double (*PixonFunc)(double x, double y, double psize);
+typedef double (*PixonNorm)(double);
+extern PixonFunc pixon_function;
+extern PixonNorm pixon_norm;
+
+double gaussian(double x, double y, double psize);
+double gaussian_norm(double psize);
+double parabloid(double x, double y, double psize);
+double parabloid_norm(double psize);
 
 /* 
  * Data class for light curves.
@@ -110,6 +126,7 @@ class PixonFFT:public DataFFT
     void convolve(const double *pseudo_img, unsigned int *pixon_map, double *conv);
     /* reduce the minimum pixon size */
     void reduce_pixon_min();
+    void increase_pixon_min();
     unsigned int get_ipxion_min();
 
     friend class Pixon;
@@ -132,12 +149,16 @@ class Pixon
     double compute_chisquare(const double *x);
     double compute_mem(const double *x);
     void compute_chisquare_grad(const double *x);
-    void compute_chisquare_grad_pixon();
+    void compute_chisquare_grad_pixon_low();
+    void compute_chisquare_grad_pixon_up();
     void compute_mem_grad(const double *x);
     double compute_pixon_number();
-    void update_pixon_map_all();
-    void update_pixon_map(unsigned int);
+    void reduce_pixon_map_all();
+    void increase_pixon_map_all();
+    void reduce_pixon_map(unsigned int);
+    void increase_pixon_map(unsigned int);
     bool update_pixon_map();
+    bool increase_pixon_map();
 
     Data cont, line;
     RMFFT rmfft;
@@ -154,7 +175,8 @@ class Pixon
     double *rmline;
     double *itline; /* interpolation */
     double *residual; 
-    double *grad_pixon;
+    double *grad_pixon_low;
+    double *grad_pixon_up;
     double *grad_chisq;
     double *grad_mem;
 
@@ -162,7 +184,6 @@ class Pixon
 };
 
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data);
-double pixon_function(double x, double y, double psize);
 tnc_function func_tnc;
 int func_tnc(double x[], double *f, double g[], void *state);
 #endif

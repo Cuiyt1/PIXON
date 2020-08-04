@@ -34,8 +34,8 @@ int main(int argc, char ** argv)
   //pixon_norm = parabloid_norm;
 
   //test_nlopt();
-  //run_uniform();
-  run();
+  run_uniform();
+  //run();
   return 0;
 }
 
@@ -180,7 +180,7 @@ void run_uniform()
   line.load(fline);
 
   const unsigned int npixel = 100;
-  unsigned int npixon = 10;
+  unsigned int npixon = 20;
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;

@@ -483,6 +483,7 @@ Pixon::Pixon()
   grad_pixon_low = NULL;
   grad_pixon_up = NULL;
   grad_mem = NULL;
+  grad_mem_pixon_low = NULL;
 }
 
 Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
@@ -498,6 +499,8 @@ Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
   grad_pixon_up = new double[npixel];
   grad_mem = new double[npixel];
   grad_chisq = new double[npixel];
+  grad_mem_pixon_low = new double[npixel];
+  grad_mem_pixon_up = new double[npixel];
 
   dt = cont.time[1]-cont.time[0];  /* time interval width of continuum light curve */
   unsigned int i;
@@ -521,6 +524,8 @@ Pixon::~Pixon()
     delete[] grad_pixon_low;
     delete[] grad_pixon_up;
     delete[] grad_mem;
+    delete[] grad_mem_pixon_low;
+    delete[] grad_mem_pixon_up;
   }
 }
 
@@ -640,7 +645,7 @@ void Pixon::compute_chisquare_grad(const double *x)
  */
 void Pixon::compute_chisquare_grad_pixon_low()
 {
-  int i, k, j, joffset, jrange1, jrange2;
+  int i, k, j, joffset, jrange1, jrange2, joffset_low;
   double psize, psize_low, t, tau, cont_intp, grad_in, grad_out, K;
   for(i=0; i<npixel; i++)
   {
@@ -648,8 +653,9 @@ void Pixon::compute_chisquare_grad_pixon_low()
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_low = pfft.pixon_sizes[pixon_map[i]-1];
     joffset = 3 * psize;
-    jrange1 = fmax(i - joffset, 0.0);
-    jrange2 = fmin(i + joffset, npixel-1);
+    joffset_low = 3 * psize_low;
+    jrange1 = fmax(fmin(i - joffset, i - joffset_low), 0.0);
+    jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
     
     for(k=0; k<line.size; k++)
     {          
@@ -674,7 +680,7 @@ void Pixon::compute_chisquare_grad_pixon_low()
  */
 void Pixon::compute_chisquare_grad_pixon_up()
 {
-  int i, k, j, joffset, jrange1, jrange2;
+  int i, k, j, joffset, jrange1, jrange2, joffset_up;
   double psize, psize_up, t, tau, cont_intp, grad_in, grad_out, K;
   for(i=0; i<npixel; i++)
   {
@@ -682,8 +688,9 @@ void Pixon::compute_chisquare_grad_pixon_up()
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_up = pfft.pixon_sizes[pixon_map[i]+1];
     joffset = 3 * psize;
-    jrange1 = fmax(i - joffset, 0.0);
-    jrange2 = fmin(i + joffset, npixel);
+    joffset_up = 3 * psize_up;
+    jrange1 = fmax(fmin(i - joffset, i - joffset_up), 0.0);
+    jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
     
     for(k=0; k<line.size; k++)
     {          
@@ -727,6 +734,66 @@ void Pixon::compute_mem_grad(const double *x)
       grad_in += (1.0 + log(image[j]/Itot + EPS)) * K;
     } 
     grad_mem[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
+  }
+}
+
+void Pixon::compute_mem_grad_pixon_low()
+{
+  double Itot, num, alpha, grad_in, psize, psize_low, K;
+  int i, j, jrange1, jrange2, joffset, joffset_low;
+  Itot = 0.0;
+  for(i=0; i<npixel; i++)
+  {
+    Itot += image[i];
+  }
+  num = compute_pixon_number();
+  alpha = log(num)/log(npixel);
+
+  for(i=0; i<npixel; i++)
+  {       
+    grad_in = 0.0;
+    psize = pfft.pixon_sizes[pixon_map[i]];
+    psize_low = pfft.pixon_sizes[pixon_map[i]-1];
+    joffset = 3 * psize;
+    joffset = 3 * psize_low;
+    jrange1 = fmax(fmin(i - joffset, i - joffset_low), 0.0);
+    jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
+    for(j=jrange1; j<=jrange2; j++)
+    {
+      K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_low);
+      grad_in += (1.0 + log(image[j]/Itot + EPS)) * K;
+    } 
+    grad_mem_pixon_low[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
+  }
+}
+
+void Pixon::compute_mem_grad_pixon_up()
+{
+  double Itot, num, alpha, grad_in, psize, psize_up, K;
+  int i, j, jrange1, jrange2, joffset, joffset_up;
+  Itot = 0.0;
+  for(i=0; i<npixel; i++)
+  {
+    Itot += image[i];
+  }
+  num = compute_pixon_number();
+  alpha = log(num)/log(npixel);
+
+  for(i=0; i<npixel; i++)
+  {       
+    grad_in = 0.0;
+    psize = pfft.pixon_sizes[pixon_map[i]];
+    psize_up = pfft.pixon_sizes[pixon_map[i]+1];
+    joffset = 3 * psize;
+    joffset = 3 * psize_up;
+    jrange1 = fmax(fmin(i - joffset, i - joffset_up), 0.0);
+    jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
+    for(j=jrange1; j<=jrange2; j++)
+    {
+      K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_up);
+      grad_in += (1.0 + log(image[j]/Itot + EPS)) * K;
+    } 
+    grad_mem_pixon_up[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
   }
 }
 
@@ -794,6 +861,7 @@ bool Pixon::update_pixon_map()
 
   cout<<"update pixon map."<<endl;
   compute_chisquare_grad_pixon_low();
+  compute_mem_grad_pixon_low();
   for(i=0; i<npixel; i++)
   {
     if(pixon_map[i] > 1)
@@ -802,7 +870,7 @@ bool Pixon::update_pixon_map()
       psize_low = pfft.pixon_sizes[pixon_map[i]-1];
       num = pixon_norm(psize);
       dnum_low = pixon_norm(psize_low) - num;
-      if( grad_pixon_low[i] > dnum_low  * (1.0 + 1.0/sqrt(2.0*num)))
+      if( grad_pixon_low[i] + grad_mem_pixon_low[i] > dnum_low  * (1.0 + 1.0/sqrt(2.0*num)))
       {
         reduce_pixon_map(i);
         cout<<"decrease "<< i <<"-th pixel to "<<pfft.pixon_sizes[pixon_map[i]]<<endl;
@@ -821,6 +889,7 @@ bool Pixon::increase_pixon_map()
 
   cout<<"update pixon map."<<endl;
   compute_chisquare_grad_pixon_up();
+  compute_mem_grad_pixon_up();
   for(i=0; i<npixel; i++)
   {
     if(pixon_map[i] < pfft.npixon - 1)
@@ -829,7 +898,7 @@ bool Pixon::increase_pixon_map()
       psize_up = pfft.pixon_sizes[pixon_map[i]+1];
       num = pixon_norm(psize);
       dnum_up = num - pixon_norm(psize_up);
-      if(grad_pixon_up[i] <= dnum_up )
+      if(grad_pixon_up[i] + grad_mem_pixon_up[i] <= dnum_up )
       {
         increase_pixon_map(i);
         cout<<"increase "<< i <<"-th pixel to "<<pfft.pixon_sizes[pixon_map[i]]<<endl;

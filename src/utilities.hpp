@@ -152,6 +152,8 @@ class Pixon
     void compute_chisquare_grad_pixon_low();
     void compute_chisquare_grad_pixon_up();
     void compute_mem_grad(const double *x);
+    void compute_mem_grad_pixon_low();
+    void compute_mem_grad_pixon_up();
     double compute_pixon_number();
     void reduce_pixon_map_all();
     void increase_pixon_map_all();
@@ -179,6 +181,8 @@ class Pixon
     double *grad_pixon_up;
     double *grad_chisq;
     double *grad_mem;
+    double *grad_mem_pixon_low;
+    double *grad_mem_pixon_up;
 
   private:
 };

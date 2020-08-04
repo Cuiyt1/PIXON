@@ -34,8 +34,8 @@ int main(int argc, char ** argv)
   //pixon_norm = parabloid_norm;
 
   //test_nlopt();
-  run_uniform();
-  //run();
+  //run_uniform();
+  run();
   return 0;
 }
 
@@ -107,7 +107,7 @@ void run()
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), npixel*sizeof(double));
-
+ 
   /* then pixel-dependent pixon size */
   iter = 0;
   do

@@ -48,6 +48,8 @@ double parabloid(double x, double y, double psize);
 double parabloid_norm(double psize);
 double tophat(double x, double y, double psize);
 double tophat_norm(double psize);
+double triangle(double x, double y, double psize);
+double triangle_norm(double psize);
 
 
 /* 

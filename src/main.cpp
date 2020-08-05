@@ -27,30 +27,51 @@ void run();
 
 int main(int argc, char ** argv)
 {
-  unsigned int pixon_type = 0;
+  unsigned int pixon_type = 2;
 
   pixon_size_factor = 3;
-  pixon_sub_factor = 1;
+  pixon_sub_factor = 3;
   
   switch(pixon_type)
   {
-    case 0:
+    case 0:  /* Gaussian */
       norm_gaussian = erf(pixon_size_factor/sqrt(2.0));
       pixon_function = gaussian;
       pixon_norm = gaussian_norm;
       break;
     
-    case 1:
+    case 1:  /* parabloid */
+      if(pixon_size_factor = 1)
+        pixon_sub_factor = 1;
+      else 
+        pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
+
       pixon_function = parabloid;
       pixon_norm = parabloid_norm;
       break;
     
-    case 2:
+    case 2:  /* top-hat */
+      if(pixon_size_factor = 1)
+        pixon_sub_factor = 1;
+      else 
+        pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
+
       pixon_function = tophat;
       pixon_norm = tophat_norm;
       break;
     
-    default:
+    case 3:  /* triangle */
+      if(pixon_size_factor = 1)
+        pixon_sub_factor = 1;
+      else 
+        pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
+
+      pixon_function = triangle;
+      pixon_norm = triangle_norm;
+      break;
+    
+    default:  /* default */
+      norm_gaussian = erf(pixon_size_factor/sqrt(2.0));
       pixon_function = gaussian;
       pixon_norm = gaussian_norm;
       break;

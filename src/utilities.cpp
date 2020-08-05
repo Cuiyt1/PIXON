@@ -65,6 +65,18 @@ double tophat_norm(double psize)
   return 1.0/(psize * 2.0*pixon_size_factor);
 }
 
+double triangle(double x, double y, double psize)
+{
+  if(fabs(y-x) <= pixon_size_factor * psize)
+    return triangle_norm(psize) * (1.0 - fabs(x-y)/(pixon_size_factor * psize));
+  else 
+    return 0.0;
+}
+double triangle_norm(double psize)
+{
+  return 1.0/(pixon_size_factor * psize);
+}
+
 /*==================================================================*/
 /* class Data */
 Data::Data()

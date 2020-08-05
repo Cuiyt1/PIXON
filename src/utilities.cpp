@@ -15,6 +15,10 @@
 
 #define EPS (1.0e-100)
 
+unsigned int pixon_size_factor;
+unsigned int pixon_sub_factor;
+double norm_gaussian;
+
 using namespace std;
 
 /*==================================================================*/
@@ -26,27 +30,39 @@ PixonNorm pixon_norm;
 /* gaussian function, truncated at 3*psize */
 double gaussian(double x, double y, double psize)
 {
-  if(fabs(y-x) <= 3 * psize)
+  if(fabs(y-x) <= pixon_size_factor * psize)
     return gaussian_norm(psize) * exp( -0.5*(y-x)*(y-x)/psize/psize );
   else 
     return 0.0;
 }
 double gaussian_norm(double psize)
 {
-  return 1.0/sqrt(2.0*M_PI)/psize/norm_3sigma;
+  return 1.0/sqrt(2.0*M_PI)/psize/norm_gaussian;
 }
 
 /* prarabloid function, truncated at 3*psize */
 double parabloid(double x, double y, double psize)
 {
-  if(fabs(y-x) <= 3 * psize)
-    return parabloid_norm(psize) * (1.0 - (y-x)*(y-x)/(3.0*psize * 3.0*psize));
+  if(fabs(y-x) <= pixon_size_factor * psize)
+    return parabloid_norm(psize) * (1.0 - (y-x)*(y-x)/(pixon_size_factor*psize * pixon_size_factor*psize));
   else 
     return 0.0;
 }
 double parabloid_norm(double psize)
 {
-  return 1.0/(psize * 4.0);
+  return 1.0/(psize * 4.0/3.0 * pixon_size_factor);
+}
+
+double tophat(double x, double y, double psize)
+{
+  if(fabs(y-x) <= pixon_size_factor * psize)
+    return parabloid_norm(psize);
+  else 
+    return 0.0;
+}
+double tophat_norm(double psize)
+{
+  return 1.0/(psize * 2.0*pixon_size_factor);
 }
 
 /*==================================================================*/
@@ -78,6 +94,7 @@ Data::~Data()
 {
   if(size > 0)
   {
+    size = 0;
     delete[] time;
     delete[] flux;
     delete[] error;
@@ -85,23 +102,14 @@ Data::~Data()
 }
 
 Data::Data(Data& data)
-{
-  if(size != data.size)
-  {
-    size = data.size;
-    time = new double[size];
-    flux = new double[size];
-    error = new double[size];
-    memcpy(time, data.time, size*sizeof(double));
-    memcpy(flux, data.flux, size*sizeof(double));
-    memcpy(error, data.error, size*sizeof(double));
-  }
-  else 
-  {
-    memcpy(time, data.time, size*sizeof(double));
-    memcpy(flux, data.flux, size*sizeof(double));
-    memcpy(error, data.error, size*sizeof(double));
-  }
+{ 
+  size = data.size;
+  time = new double[size];
+  flux = new double[size];
+  error = new double[size];
+  memcpy(time, data.time, size*sizeof(double));
+  memcpy(flux, data.flux, size*sizeof(double));
+  memcpy(error, data.error, size*sizeof(double));
 }
 
 Data& Data::operator = (Data& data)
@@ -302,6 +310,8 @@ DataFFT::~DataFFT()
 {
   if(nd > 0)
   {
+    nd = 0;
+
     fftw_free(data_fft);
     fftw_free(resp_fft);
     fftw_free(conv_fft);
@@ -372,7 +382,7 @@ PixonFFT::PixonFFT()
   pixon_sizes_num = NULL;
 }
 PixonFFT::PixonFFT(unsigned int npixel, unsigned int npixon)
-      :npixon(npixon), DataFFT(npixel, 1.0, npixon)
+      :npixon(npixon), DataFFT(npixel, 1.0, npixon*pixon_size_factor)
 {
   unsigned int i;
 
@@ -381,7 +391,7 @@ PixonFFT::PixonFFT(unsigned int npixel, unsigned int npixon)
   pixon_sizes_num = new double[npixon];
   for(i=0; i<npixon; i++)
   {
-    pixon_sizes[i] = (i+1)/3.0;
+    pixon_sizes[i] = (i+1)*1.0/pixon_sub_factor;
     pixon_sizes_num[i] = 0;
   }
   /* assume that all pixels have the largest pixon size */
@@ -392,6 +402,7 @@ PixonFFT::~PixonFFT()
 {
   if(npixon > 0)
   {
+    npixon = 0;
     delete[] pixon_sizes;
     delete[] pixon_sizes_num;
   }
@@ -497,8 +508,8 @@ Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
   residual = new double[line.size];
   grad_pixon_low = new double[npixel];
   grad_pixon_up = new double[npixel];
-  grad_mem = new double[npixel];
   grad_chisq = new double[npixel];
+  grad_mem = new double[npixel];
   grad_mem_pixon_low = new double[npixel];
   grad_mem_pixon_up = new double[npixel];
 
@@ -514,6 +525,7 @@ Pixon::~Pixon()
 {
   if(npixel > 0)
   {
+    npixel = 0;
     delete[] pixon_map;
     delete[] image;
     delete[] pseudo_image;
@@ -618,7 +630,7 @@ void Pixon::compute_chisquare_grad(const double *x)
   {
     grad_out = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
-    joffset = 3 * psize;
+    joffset = ceil(pixon_size_factor * psize);
     jrange1 = fmax(i - joffset, 0);
     jrange2 = fmin(i + joffset, npixel-1);
     
@@ -652,8 +664,8 @@ void Pixon::compute_chisquare_grad_pixon_low()
     grad_out = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_low = pfft.pixon_sizes[pixon_map[i]-1];
-    joffset = 3 * psize;
-    joffset_low = 3 * psize_low;
+    joffset = ceil(pixon_size_factor * psize);
+    joffset_low = ceil(pixon_size_factor * psize_low);
     jrange1 = fmax(fmin(i - joffset, i - joffset_low), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
     
@@ -687,8 +699,8 @@ void Pixon::compute_chisquare_grad_pixon_up()
     grad_out = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_up = pfft.pixon_sizes[pixon_map[i]+1];
-    joffset = 3 * psize;
-    joffset_up = 3 * psize_up;
+    joffset = ceil(pixon_size_factor * psize);
+    joffset_up = ceil(pixon_size_factor * psize_up);
     jrange1 = fmax(fmin(i - joffset, i - joffset_up), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
     
@@ -725,7 +737,7 @@ void Pixon::compute_mem_grad(const double *x)
   {       
     grad_in = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
-    joffset = 3 * psize;
+    joffset = ceil(pixon_size_factor * psize);
     jrange1 = fmax(i - joffset, 0.0);
     jrange2 = fmin(i + joffset, npixel-1);
     for(j=jrange1; j<=jrange2; j++)
@@ -754,8 +766,8 @@ void Pixon::compute_mem_grad_pixon_low()
     grad_in = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_low = pfft.pixon_sizes[pixon_map[i]-1];
-    joffset = 3 * psize;
-    joffset = 3 * psize_low;
+    joffset = ceil(pixon_size_factor * psize);
+    joffset = ceil(pixon_size_factor * psize_low);
     jrange1 = fmax(fmin(i - joffset, i - joffset_low), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
     for(j=jrange1; j<=jrange2; j++)
@@ -784,8 +796,8 @@ void Pixon::compute_mem_grad_pixon_up()
     grad_in = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_up = pfft.pixon_sizes[pixon_map[i]+1];
-    joffset = 3 * psize;
-    joffset = 3 * psize_up;
+    joffset = ceil(pixon_size_factor * psize);
+    joffset = ceil(pixon_size_factor * psize_up);
     jrange1 = fmax(fmin(i - joffset, i - joffset_up), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
     for(j=jrange1; j<=jrange2; j++)

@@ -21,11 +21,11 @@
 
 #include "tnc.h"
 
-#define norm_3sigma (0.9973)
-#define norm_2sigma (0.9545)
-#define norm_1sigma (0.6827)
-
 using namespace std;
+
+extern unsigned int pixon_size_factor;
+extern unsigned int pixon_sub_factor;
+extern double norm_gaussian;
 
 class Data;
 class DataFFT;
@@ -46,6 +46,9 @@ double gaussian(double x, double y, double psize);
 double gaussian_norm(double psize);
 double parabloid(double x, double y, double psize);
 double parabloid_norm(double psize);
+double tophat(double x, double y, double psize);
+double tophat_norm(double psize);
+
 
 /* 
  * Data class for light curves.
@@ -188,6 +191,6 @@ class Pixon
 };
 
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data);
-tnc_function func_tnc;
+//tnc_function func_tnc;
 int func_tnc(double x[], double *f, double g[], void *state);
 #endif

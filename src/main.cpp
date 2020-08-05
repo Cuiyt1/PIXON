@@ -27,14 +27,37 @@ void run();
 
 int main(int argc, char ** argv)
 {
-  pixon_function = gaussian;
-  pixon_norm = gaussian_norm;
+  unsigned int pixon_type = 0;
 
-  //pixon_function = parabloid;
-  //pixon_norm = parabloid_norm;
+  pixon_size_factor = 3;
+  pixon_sub_factor = 1;
+  
+  switch(pixon_type)
+  {
+    case 0:
+      norm_gaussian = erf(pixon_size_factor/sqrt(2.0));
+      pixon_function = gaussian;
+      pixon_norm = gaussian_norm;
+      break;
+    
+    case 1:
+      pixon_function = parabloid;
+      pixon_norm = parabloid_norm;
+      break;
+    
+    case 2:
+      pixon_function = tophat;
+      pixon_norm = tophat_norm;
+      break;
+    
+    default:
+      pixon_function = gaussian;
+      pixon_norm = gaussian_norm;
+      break;
+  }
 
   //test_nlopt();
-  //run_uniform();
+  run_uniform();
   run();
   return 0;
 }
@@ -47,17 +70,17 @@ void run()
   cont.load(fcon);
   fline = "data/line.txt";
   line.load(fline);
-
+  
   const unsigned int npixel = 100;
-  unsigned int npixon = 20;
+  unsigned int npixon = 10*pixon_sub_factor;
   unsigned int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
   bool flag;
-
+  
   double f, f_old, df, num, num_old, dnum, chisq, chisq_old, dchisq;
   double *image=new double[npixel], *itline=new double[line.size];
-
+  
   /* TNC */
   int rc, maxCGit = npixel, maxnfeval = 2000, nfeval, niter;
   double low[npixel], up[npixel], eta = -1.0, stepmx = 10000.0,
@@ -66,7 +89,6 @@ void run()
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, npixel);
-  nlopt::opt opt1(nlopt::LD_SLSQP, npixel);
   vector<double> x(npixel), g(npixel), x_old(npixel);
   opt0.set_min_objective(func_nlopt, args);
   opt0.set_lower_bounds(-100.0);
@@ -76,16 +98,6 @@ void run()
   //opt0.set_ftol_rel(1e-11);
   opt0.set_ftol_abs(1.0e-15);
   opt0.set_xtol_abs(1.0e-15);
-
-  opt1.set_min_objective(func_nlopt, args);
-  opt1.set_lower_bounds(-100.0);
-  opt1.set_upper_bounds(1.0);
-  opt1.set_maxeval(10000);
-  //opt1.set_xtol_rel(1e-11);
-  //opt1.set_ftol_rel(1e-11);
-  opt1.set_ftol_abs(1.0e-15);
-  opt1.set_xtol_abs(1.0e-15);
-
 
   for(i=0; i<npixel; i++)
   {
@@ -126,6 +138,14 @@ void run()
     
     chisq = pixon.chisq;
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
+
+    if(f <= line.size)
+    {
+      memcpy(image, pixon.image, npixel*sizeof(double));
+      memcpy(itline, pixon.itline, line.size*sizeof(double));
+      memcpy(x_old.data(), x.data(), npixel*sizeof(double));
+      break;
+    }
     
     df = f-f_old;
     dnum = num - num_old;
@@ -141,7 +161,7 @@ void run()
     memcpy(image, pixon.image, npixel*sizeof(double));
     memcpy(itline, pixon.itline, line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), npixel*sizeof(double));
-  }while(pixon.pfft.get_ipxion_min() >= 0);
+  }while(pixon.pfft.get_ipxion_min() >= 0); 
 
   ofstream fout;
   fout.open("data/resp_tnc.txt");
@@ -161,7 +181,7 @@ void run()
   fout.open("data/pixon_map.txt");
   for(i=0; i<npixel; i++)
   {
-    fout<<i<<"  "<<pixon.pixon_map[i]<<endl;
+    fout<<i<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
   }
   fout.close();
 
@@ -180,7 +200,7 @@ void run_uniform()
   line.load(fline);
 
   const unsigned int npixel = 100;
-  unsigned int npixon = 20;
+  unsigned int npixon = 10*pixon_sub_factor;
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
@@ -242,12 +262,20 @@ void run_uniform()
     
     chisq = pixon.chisq;
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
+
+    if(f <= line.size)
+    {
+      memcpy(image, pixon.image, npixel*sizeof(double));
+      memcpy(itline, pixon.itline, line.size*sizeof(double));
+      memcpy(x_old.data(), x.data(), npixel*sizeof(double));
+      break;
+    }
     
     df = f-f_old;
     dnum = num - num_old;
     dchisq = chisq - chisq_old;
 
-    if(-dchisq < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
       break;
 
     num_old = num;
@@ -259,14 +287,14 @@ void run_uniform()
   }
 
   ofstream fout;
-  fout.open("data/resp_tnc.txt");
+  fout.open("data/resp_tnc_uniform.txt");
   for(i=0; i<npixel; i++)
   {
     fout<<pixon.dt*i<<"  "<<exp(x_old[i])<<"   "<<image[i]<<"  "<<pixon_function(pixon.dt*i, 300.0, 50.0)<<endl;
   }
   fout.close();
 
-  fout.open("data/line_sim_tnc.txt");
+  fout.open("data/line_sim_tnc_uniform.txt");
   for(i=0; i<line.size; i++)
   {
     fout<<line.time[i]<<"  "<<itline[i]<<endl;

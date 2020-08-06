@@ -10,6 +10,7 @@
 #include <vector>
 #include <iomanip>
 #include <cstring>
+#include <cmath>
 
 #include "utilities.hpp"
 
@@ -17,62 +18,61 @@
 
 unsigned int pixon_size_factor;
 unsigned int pixon_sub_factor;
-double norm_gaussian;
+unsigned int pixon_map_low_bound;
 
 using namespace std;
 
 /*==================================================================*/
-/* class PixonFunc */
+/* class PixonBasis */
 
-PixonFunc pixon_function;
-PixonNorm pixon_norm;
+double PixonBasis::norm_gaussian=erf(1.0/sqrt(2.0));
 
 /* gaussian function, truncated at 3*psize */
-double gaussian(double x, double y, double psize)
+double PixonBasis::gaussian(double x, double y, double psize)
 {
   if(fabs(y-x) <= pixon_size_factor * psize)
     return gaussian_norm(psize) * exp( -0.5*(y-x)*(y-x)/psize/psize );
   else 
     return 0.0;
 }
-double gaussian_norm(double psize)
+double PixonBasis::gaussian_norm(double psize)
 {
   return 1.0/sqrt(2.0*M_PI)/psize/norm_gaussian;
 }
 
 /* prarabloid function, truncated at 3*psize */
-double parabloid(double x, double y, double psize)
+double PixonBasis::parabloid(double x, double y, double psize)
 {
   if(fabs(y-x) <= pixon_size_factor * psize)
     return parabloid_norm(psize) * (1.0 - (y-x)*(y-x)/(pixon_size_factor*psize * pixon_size_factor*psize));
   else 
     return 0.0;
 }
-double parabloid_norm(double psize)
+double PixonBasis::parabloid_norm(double psize)
 {
   return 1.0/(psize * 4.0/3.0 * pixon_size_factor);
 }
 
-double tophat(double x, double y, double psize)
+double PixonBasis::tophat(double x, double y, double psize)
 {
   if(fabs(y-x) <= pixon_size_factor * psize)
     return parabloid_norm(psize);
   else 
     return 0.0;
 }
-double tophat_norm(double psize)
+double PixonBasis::tophat_norm(double psize)
 {
   return 1.0/(psize * 2.0*pixon_size_factor);
 }
 
-double triangle(double x, double y, double psize)
+double PixonBasis::triangle(double x, double y, double psize)
 {
   if(fabs(y-x) <= pixon_size_factor * psize)
     return triangle_norm(psize) * (1.0 - fabs(x-y)/(pixon_size_factor * psize));
   else 
     return 0.0;
 }
-double triangle_norm(double psize)
+double PixonBasis::triangle_norm(double psize)
 {
   return 1.0/(pixon_size_factor * psize);
 }
@@ -888,7 +888,7 @@ bool Pixon::update_pixon_map()
   compute_mem_grad_pixon_low();
   for(i=0; i<npixel; i++)
   {
-    if(pixon_map[i] > 1)
+    if(pixon_map[i] > pixon_map_low_bound + 1)
     {
       psize = pfft.pixon_sizes[pixon_map[i]];
       psize_low = pfft.pixon_sizes[pixon_map[i]-1];
@@ -933,8 +933,11 @@ bool Pixon::increase_pixon_map()
   return flag;
 }
 /*==================================================================*/
+/* pixon functions */
+PixonFunc pixon_function;
+PixonNorm pixon_norm;
 
-
+/* function for nlopt */
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)
 {
   Pixon *pixon = (Pixon *)f_data;
@@ -956,6 +959,7 @@ double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)
   return chisq + mem;
 }
 
+/* function for tnc */
 int func_tnc(double x[], double *f, double g[], void *state)
 {
   Pixon *pixon = (Pixon *)state;

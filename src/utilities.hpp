@@ -25,8 +25,9 @@ using namespace std;
 
 extern unsigned int pixon_size_factor;
 extern unsigned int pixon_sub_factor;
-extern double norm_gaussian;
+extern unsigned int pixon_map_low_bound;
 
+class PixonBasis;
 class Data;
 class DataFFT;
 class RMFFT;
@@ -34,23 +35,21 @@ class PixonFFT;
 class Pixon;
 
 /* 
- * pixon functions
- * 
+ *  class for pixon basis functions
  */
-typedef double (*PixonFunc)(double x, double y, double psize);
-typedef double (*PixonNorm)(double);
-extern PixonFunc pixon_function;
-extern PixonNorm pixon_norm;
-
-double gaussian(double x, double y, double psize);
-double gaussian_norm(double psize);
-double parabloid(double x, double y, double psize);
-double parabloid_norm(double psize);
-double tophat(double x, double y, double psize);
-double tophat_norm(double psize);
-double triangle(double x, double y, double psize);
-double triangle_norm(double psize);
-
+class PixonBasis
+{
+  public:
+    static double norm_gaussian;
+    static double gaussian(double x, double y, double psize);
+    static double gaussian_norm(double psize);
+    static double parabloid(double x, double y, double psize);
+    static double parabloid_norm(double psize);
+    static double tophat(double x, double y, double psize);
+    static double tophat_norm(double psize);
+    static double triangle(double x, double y, double psize);
+    static double triangle_norm(double psize);
+};
 
 /* 
  * Data class for light curves.
@@ -192,7 +191,13 @@ class Pixon
   private:
 };
 
+/* pixon functions */
+typedef double (*PixonFunc)(double x, double y, double psize);
+typedef double (*PixonNorm)(double);
+extern PixonFunc pixon_function;
+extern PixonNorm pixon_norm;
+
+/* functions for nlopt and tnc */
 double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data);
-//tnc_function func_tnc;
 int func_tnc(double x[], double *f, double g[], void *state);
 #endif

@@ -40,7 +40,7 @@ class Pixon;
 class PixonBasis
 {
   public:
-    static double norm_gaussian;
+    static double norm_gaussian, coeff1_gaussian, coeff2_gaussian;
     static double gaussian(double x, double y, double psize);
     static double gaussian_norm(double psize);
     static double parabloid(double x, double y, double psize);

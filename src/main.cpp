@@ -27,15 +27,19 @@ void run();
 
 int main(int argc, char ** argv)
 {
-  unsigned int pixon_type = 3;
+  unsigned int pixon_type = 0;
 
   pixon_size_factor = 1;
-  pixon_sub_factor = 1;
+  pixon_sub_factor = 3;
   
   switch(pixon_type)
   {
     case 0:  /* Gaussian */
-      PixonBasis::norm_gaussian = erf(pixon_size_factor/sqrt(2.0));
+      PixonBasis::coeff1_gaussian = exp(-0.5 * pixon_size_factor*pixon_size_factor);
+      PixonBasis::coeff2_gaussian = 1.0 - PixonBasis::coeff1_gaussian;
+      PixonBasis::norm_gaussian = (sqrt(2.0*M_PI) * erf(pixon_size_factor/sqrt(2.0)) 
+                    - 2.0*pixon_size_factor * PixonBasis::coeff1_gaussian)/PixonBasis::coeff2_gaussian;
+
       pixon_map_low_bound = pixon_sub_factor - 1;
 
       pixon_function = PixonBasis::gaussian;
@@ -43,7 +47,7 @@ int main(int argc, char ** argv)
       break;
     
     case 1:  /* parabloid */
-      if(pixon_size_factor = 1)
+      if(pixon_size_factor == 1)
         pixon_sub_factor = 1;
       else 
         pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
@@ -54,7 +58,7 @@ int main(int argc, char ** argv)
       break;
     
     case 2:  /* top-hat */
-      if(pixon_size_factor = 1)
+      if(pixon_size_factor == 1)
         pixon_sub_factor = 1;
       else 
         pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
@@ -65,7 +69,7 @@ int main(int argc, char ** argv)
       break;
     
     case 3:  /* triangle */
-      if(pixon_size_factor = 1)
+      if(pixon_size_factor == 1)
         pixon_sub_factor = 1;
       else 
         pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
@@ -76,7 +80,11 @@ int main(int argc, char ** argv)
       break;
     
     default:  /* default */
-      PixonBasis::norm_gaussian = erf(pixon_size_factor/sqrt(2.0));
+      PixonBasis::coeff1_gaussian = exp(-0.5 * pixon_size_factor*pixon_size_factor);
+      PixonBasis::coeff2_gaussian = 1.0 - PixonBasis::coeff1_gaussian;
+      PixonBasis::norm_gaussian = PixonBasis::coeff2_gaussian / (sqrt(2.0*M_PI) * erf(pixon_size_factor/sqrt(2.0)) 
+                    - 2.0*pixon_size_factor * PixonBasis::coeff1_gaussian);
+
       pixon_map_low_bound = pixon_sub_factor - 1;
 
       pixon_function = PixonBasis::gaussian;
@@ -100,13 +108,13 @@ void run()
   line.load(fline);
   
   const unsigned int npixel = 100;
-  unsigned int npixon = 10*pixon_sub_factor;
+  unsigned int npixon = 8*pixon_sub_factor;
   unsigned int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
   bool flag;
   
-  double f, f_old, df, num, num_old, dnum, chisq, chisq_old, dchisq;
+  double f, f_old, num, num_old, chisq, chisq_old;
   double *image=new double[npixel], *itline=new double[line.size];
   
   /* TNC */
@@ -174,10 +182,6 @@ void run()
       memcpy(x_old.data(), x.data(), npixel*sizeof(double));
       break;
     }
-    
-    df = f-f_old;
-    dnum = num - num_old;
-    dchisq = chisq - chisq_old;
 
     flag = pixon.update_pixon_map();
     if(!flag)
@@ -228,11 +232,11 @@ void run_uniform()
   line.load(fline);
 
   const unsigned int npixel = 100;
-  unsigned int npixon = 10*pixon_sub_factor;
+  unsigned int npixon = 8*pixon_sub_factor;
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
-  double f, f_old, num_old, num, df, dnum, chisq, chisq_old, dchisq;
+  double f, f_old, num_old, num, df, dnum, chisq, chisq_old;
   double *image=new double[npixel], *itline=new double[line.size];
  
   int rc, maxCGit = npixel, maxnfeval = 2000, nfeval, niter;
@@ -301,7 +305,6 @@ void run_uniform()
     
     df = f-f_old;
     dnum = num - num_old;
-    dchisq = chisq - chisq_old;
 
     if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
       break;
@@ -449,7 +452,7 @@ void test()
 
   unsigned int i, nr = 100, np=13;
   double *resp, *delay,*conv;
-  double sigma = 20.0, fft_dx;
+  double sigma = 20.0;
   double *pseudo_img, *conv_img;
   unsigned int *pixon_map;
   
@@ -464,7 +467,6 @@ void test()
   pixon_map = new unsigned int[nr];
   conv_img = new double[nr];
 
-  fft_dx = (cont.time[1] - cont.time[0]);
   for(i=0; i<nr; i++)
   {
     delay[i] = cont.time[i] - cont.time[0];

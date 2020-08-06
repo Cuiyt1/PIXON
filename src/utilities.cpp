@@ -25,22 +25,24 @@ using namespace std;
 /*==================================================================*/
 /* class PixonBasis */
 
-double PixonBasis::norm_gaussian=erf(1.0/sqrt(2.0));
+double PixonBasis::coeff1_gaussian = exp(-0.5);
+double PixonBasis::coeff2_gaussian =(1.0 - exp(-0.5));
+double PixonBasis::norm_gaussian= (sqrt(2*M_PI) * erf(1.0/sqrt(2.0)) - 2*exp(-0.5))/PixonBasis::coeff2_gaussian;
 
-/* gaussian function, truncated at 3*psize */
+/* modified gaussian function, truncated at factor * psize */
 double PixonBasis::gaussian(double x, double y, double psize)
 {
   if(fabs(y-x) <= pixon_size_factor * psize)
-    return gaussian_norm(psize) * exp( -0.5*(y-x)*(y-x)/psize/psize );
+    return gaussian_norm(psize)/coeff2_gaussian * (exp( -0.5*(y-x)*(y-x)/psize/psize ) - coeff1_gaussian);
   else 
     return 0.0;
 }
 double PixonBasis::gaussian_norm(double psize)
 {
-  return 1.0/sqrt(2.0*M_PI)/psize/norm_gaussian;
+  return 1.0/(norm_gaussian*psize);
 }
 
-/* prarabloid function, truncated at 3*psize */
+/* prarabloid function, truncated at factor * psize */
 double PixonBasis::parabloid(double x, double y, double psize)
 {
   if(fabs(y-x) <= pixon_size_factor * psize)
@@ -214,8 +216,8 @@ DataFFT::DataFFT()
   data_real = resp_real = conv_real = NULL;
 }
 
-DataFFT::DataFFT(unsigned int nd, double fft_dx, unsigned int npad)
-      :nd(nd), npad(npad) 
+DataFFT::DataFFT(unsigned int nd_in, double fft_dx, unsigned int npad_in)
+      :nd(nd_in), npad(npad_in) 
 {
   int i;
 
@@ -243,8 +245,8 @@ DataFFT::DataFFT(unsigned int nd, double fft_dx, unsigned int npad)
   }
 }
 
-DataFFT::DataFFT(Data& cont, unsigned int npad)
-      :nd(cont.size), npad(npad)
+DataFFT::DataFFT(Data& cont, unsigned int npad_in)
+      :nd(cont.size), npad(npad_in)
 {
   int i;
 
@@ -393,8 +395,8 @@ PixonFFT::PixonFFT()
   pixon_sizes = NULL;
   pixon_sizes_num = NULL;
 }
-PixonFFT::PixonFFT(unsigned int npixel, unsigned int npixon)
-      :npixon(npixon), DataFFT(npixel, 1.0, npixon*pixon_size_factor)
+PixonFFT::PixonFFT(unsigned int npixel_in, unsigned int npixon_in)
+      :DataFFT(npixel_in, 1.0, npixon_in*pixon_size_factor), npixon(npixon_in)
 {
   unsigned int i;
 
@@ -407,7 +409,7 @@ PixonFFT::PixonFFT(unsigned int npixel, unsigned int npixon)
     pixon_sizes_num[i] = 0;
   }
   /* assume that all pixels have the largest pixon size */
-  pixon_sizes_num[ipixon_min] = npixel;
+  pixon_sizes_num[ipixon_min] = npixel_in;
 }
 
 PixonFFT::~PixonFFT()
@@ -509,8 +511,8 @@ Pixon::Pixon()
   grad_mem_pixon_low = NULL;
 }
 
-Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
-  :cont(cont), line(line), npixel(npixel), rmfft(cont), pfft(npixel, npixon)
+Pixon::Pixon(Data& cont_in, Data& line_in, unsigned int npixel_in,  unsigned int npixon_in)
+  :cont(cont_in), line(line_in), npixel(npixel_in), rmfft(cont_in), pfft(npixel_in, npixon_in)
 {
   pixon_map = new unsigned int[npixel];
   image = new double[npixel];
@@ -529,7 +531,7 @@ Pixon::Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon)
   unsigned int i;
   for(i=0; i<npixel; i++)
   {
-    pixon_map[i] = npixon-1;  /* set the largest pixon size */
+    pixon_map[i] = npixon_in-1;  /* set the largest pixon size */
   }
 }
 
@@ -779,7 +781,7 @@ void Pixon::compute_mem_grad_pixon_low()
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_low = pfft.pixon_sizes[pixon_map[i]-1];
     joffset = ceil(pixon_size_factor * psize);
-    joffset = ceil(pixon_size_factor * psize_low);
+    joffset_low = ceil(pixon_size_factor * psize_low);
     jrange1 = fmax(fmin(i - joffset, i - joffset_low), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
     for(j=jrange1; j<=jrange2; j++)
@@ -809,7 +811,7 @@ void Pixon::compute_mem_grad_pixon_up()
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_up = pfft.pixon_sizes[pixon_map[i]+1];
     joffset = ceil(pixon_size_factor * psize);
-    joffset = ceil(pixon_size_factor * psize_up);
+    joffset_up = ceil(pixon_size_factor * psize_up);
     jrange1 = fmax(fmin(i - joffset, i - joffset_up), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
     for(j=jrange1; j<=jrange2; j++)
@@ -908,7 +910,7 @@ bool Pixon::update_pixon_map()
 bool Pixon::increase_pixon_map()
 {
   int i;
-  double psize, psize_up, dnum_low, dnum_up, num;
+  double psize, psize_up, dnum_up, num;
   bool flag=false;
 
   cout<<"update pixon map."<<endl;

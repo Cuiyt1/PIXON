@@ -27,65 +27,53 @@ void run();
 
 int main(int argc, char ** argv)
 {
-  unsigned int pixon_type = 0;
+  unsigned int pixon_type = 2;
 
-  pixon_size_factor = 1;
   pixon_sub_factor = 3;
   
   switch(pixon_type)
   {
     case 0:  /* Gaussian */
+      pixon_size_factor = 3;
+      pixon_map_low_bound = pixon_sub_factor - 1;
       PixonBasis::coeff1_gaussian = exp(-0.5 * pixon_size_factor*pixon_size_factor);
       PixonBasis::coeff2_gaussian = 1.0 - PixonBasis::coeff1_gaussian;
       PixonBasis::norm_gaussian = (sqrt(2.0*M_PI) * erf(pixon_size_factor/sqrt(2.0)) 
                     - 2.0*pixon_size_factor * PixonBasis::coeff1_gaussian)/PixonBasis::coeff2_gaussian;
 
-      pixon_map_low_bound = pixon_sub_factor - 1;
-
       pixon_function = PixonBasis::gaussian;
       pixon_norm = PixonBasis::gaussian_norm;
       break;
     
-    case 1:  /* parabloid */
-      if(pixon_size_factor == 1)
-        pixon_sub_factor = 1;
-      else 
-        pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
-      
+    case 1:  /* parabloid */      
+      pixon_size_factor = 1;
       pixon_map_low_bound = pixon_sub_factor - 1;
       pixon_function = PixonBasis::parabloid;
       pixon_norm = PixonBasis::parabloid_norm;
       break;
     
-    case 2:  /* top-hat */
-      if(pixon_size_factor == 1)
-        pixon_sub_factor = 1;
-      else 
-        pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
-      
+    case 2:  /* top-hat */ 
+      pixon_size_factor = 1; 
+      pixon_sub_factor = 1;   
       pixon_map_low_bound = pixon_sub_factor - 1;
       pixon_function = PixonBasis::tophat;
       pixon_norm = PixonBasis::tophat_norm;
       break;
     
-    case 3:  /* triangle */
-      if(pixon_size_factor == 1)
-        pixon_sub_factor = 1;
-      else 
-        pixon_sub_factor = fmax(pixon_sub_factor, pixon_size_factor);
-      
+    case 3:  /* triangle */ 
+      pixon_size_factor = 1;     
       pixon_map_low_bound = pixon_sub_factor - 1;
       pixon_function = PixonBasis::triangle;
       pixon_norm = PixonBasis::triangle_norm;
       break;
     
     default:  /* default */
+      pixon_size_factor = 1;
+      pixon_map_low_bound = pixon_sub_factor - 1;
       PixonBasis::coeff1_gaussian = exp(-0.5 * pixon_size_factor*pixon_size_factor);
       PixonBasis::coeff2_gaussian = 1.0 - PixonBasis::coeff1_gaussian;
       PixonBasis::norm_gaussian = PixonBasis::coeff2_gaussian / (sqrt(2.0*M_PI) * erf(pixon_size_factor/sqrt(2.0)) 
                     - 2.0*pixon_size_factor * PixonBasis::coeff1_gaussian);
-
-      pixon_map_low_bound = pixon_sub_factor - 1;
 
       pixon_function = PixonBasis::gaussian;
       pixon_norm = PixonBasis::gaussian_norm;
@@ -107,8 +95,8 @@ void run()
   fline = "data/line.txt";
   line.load(fline);
   
-  const unsigned int npixel = 100;
-  unsigned int npixon = 8*pixon_sub_factor;
+  const unsigned int npixel = line.size*0.3;
+  unsigned int npixon = 15*pixon_sub_factor;
   unsigned int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
@@ -150,7 +138,8 @@ void run()
   
   f_old = f;
   num_old = pixon.compute_pixon_number();
-  chisq_old = pixon.chisq;
+  pixon.compute_rm_pixon(x.data());
+  chisq_old = pixon.compute_chisquare(x.data());
   cout<<f_old<<"  "<<num_old<<"   "<<chisq_old<<endl;
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
@@ -172,7 +161,8 @@ void run()
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    chisq = pixon.chisq;
+    pixon.compute_rm_pixon(x.data());
+    chisq = pixon.compute_chisquare(x.data());
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
 
     if(f <= line.size)
@@ -231,8 +221,8 @@ void run_uniform()
   fline = "data/line.txt";
   line.load(fline);
 
-  const unsigned int npixel = 100;
-  unsigned int npixon = 8*pixon_sub_factor;
+  const unsigned int npixel = line.size*0.3;
+  unsigned int npixon = 15*pixon_sub_factor;
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
@@ -264,7 +254,7 @@ void run_uniform()
     x[i] = log(1.0/(npixel * pixon.dt));
     //x[i] = log(1.0/sqrt(2.0*M_PI)/10.0 * exp( - 0.5*pow((pixon.dt*i - 300.0)/10.0, 2.0) ) + 1.0e-10);
   }
-  
+
   opt0.optimize(x, f);
 
   rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
@@ -273,7 +263,8 @@ void run_uniform()
   
   f_old = f;
   num_old = pixon.compute_pixon_number();
-  chisq_old = pixon.chisq;
+  pixon.compute_rm_pixon(x.data());
+  chisq_old = pixon.compute_chisquare(x.data());
   memcpy(image, pixon.image, npixel*sizeof(double));
   memcpy(itline, pixon.itline, line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), npixel*sizeof(double));
@@ -292,7 +283,8 @@ void run_uniform()
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    chisq = pixon.chisq;
+    pixon.compute_rm_pixon(x.data());
+    chisq = pixon.compute_chisquare(x.data());
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
 
     if(f <= line.size)
@@ -345,7 +337,7 @@ void test_nlopt()
   fline = "data/line.txt";
   line.load(fline);
 
-  unsigned int npixel = 100, npixon = 8;
+  unsigned int npixel = cont.size*0.3, npixon = 8;
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   nlopt::opt opt0(nlopt::GN_ISRES, npixel);

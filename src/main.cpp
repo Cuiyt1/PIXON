@@ -22,12 +22,14 @@ using namespace std;
 
 void test();
 void test_nlopt();
-void run_uniform();
-void run();
+void run_uniform(Data &, Data &, double *, unsigned int, unsigned int );
+void run(Data &, Data &, double *, unsigned int, unsigned int );
 
 int main(int argc, char ** argv)
 {
-  unsigned int pixon_type = 2;
+  unsigned int pixon_type = atoi(argv[1]);
+
+  cout<<"Pixon type: "<<pixon_type<<endl;
 
   pixon_sub_factor = 3;
   
@@ -80,23 +82,27 @@ int main(int argc, char ** argv)
       break;
   }
 
-  //test_nlopt();
-  run_uniform();
-  run();
-  return 0;
-}
-
-void run()
-{
   Data cont, line;
   string fcon, fline;
   fcon="data/con.txt";
   cont.load(fcon);
   fline = "data/line.txt";
   line.load(fline);
-  
-  const unsigned int npixel = line.size*0.3;
-  unsigned int npixon = 15*pixon_sub_factor;
+
+  const unsigned int npixel = line.size*0.5;
+  unsigned int npixon = 30*pixon_sub_factor/pixon_size_factor;
+
+  double *pimg = new double[npixel];
+  run_uniform(cont, line, pimg, npixel, npixon);
+  run(cont, line, pimg, npixel, npixon);
+
+  delete[] pimg;
+
+  return 0;
+}
+
+void run(Data& cont, Data& line, double *pimg, unsigned int npixel, unsigned int npixon)
+{
   unsigned int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
@@ -127,7 +133,8 @@ void run()
   {
     low[i] = -100.0;
     up[i] =  1.0;
-    x[i] = log(1.0/(npixel * pixon.dt));
+    //x[i] = log(1.0/(npixel * pixon.dt));
+    x[i] = pimg[i];
   }
 
   opt0.optimize(x, f);
@@ -203,7 +210,7 @@ void run()
   fout.open("data/pixon_map.txt");
   for(i=0; i<npixel; i++)
   {
-    fout<<i<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
+    fout<<i*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
   }
   fout.close();
 
@@ -212,17 +219,8 @@ void run()
 
 }
 
-void run_uniform()
+void run_uniform(Data& cont, Data& line, double *pimg, unsigned int npixel, unsigned int npixon)
 {
-  Data cont, line;
-  string fcon, fline;
-  fcon="data/con.txt";
-  cont.load(fcon);
-  fline = "data/line.txt";
-  line.load(fline);
-
-  const unsigned int npixel = line.size*0.3;
-  unsigned int npixon = 15*pixon_sub_factor;
   unsigned int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
@@ -323,6 +321,8 @@ void run_uniform()
     fout<<line.time[i]<<"  "<<itline[i]<<endl;
   }
   fout.close();
+  
+  memcpy(pimg, x_old.data(), npixel*sizeof(double));
 
   delete[] image;
   delete[] itline;

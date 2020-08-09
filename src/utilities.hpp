@@ -148,7 +148,8 @@ class Pixon
     Pixon();
     Pixon(Data& cont, Data& line, unsigned int npixel,  unsigned int npixon);
     ~Pixon();
-    double interp(double t);
+    double interp_line(double t);
+    double interp_cont(double t);
     void compute_rm_pixon(const double *x);
     double compute_chisquare(const double *x);
     double compute_mem(const double *x);
@@ -165,6 +166,7 @@ class Pixon
     void increase_pixon_map(unsigned int);
     bool update_pixon_map();
     bool increase_pixon_map();
+    void smooth_pixon_map();
 
     Data cont, line;
     RMFFT rmfft;
@@ -172,6 +174,7 @@ class Pixon
 
     unsigned int npixel;
     unsigned int *pixon_map;
+    unsigned int *pixon_map_smooth;
     double *image;
     double *pseudo_image;
 

@@ -14,7 +14,7 @@
 
 #include "utilities.hpp"
 
-#define EPS (1.0e-100)
+#define EPS (1.0e-50)
 
 unsigned int pixon_size_factor;
 unsigned int pixon_sub_factor;
@@ -500,6 +500,7 @@ Pixon::Pixon()
 {
   npixel = 0;
   pixon_map = NULL; 
+  pixon_map_smooth = NULL;
   image = pseudo_image = NULL;
   rmline = NULL;
   itline = NULL;
@@ -515,6 +516,7 @@ Pixon::Pixon(Data& cont_in, Data& line_in, unsigned int npixel_in,  unsigned int
   :cont(cont_in), line(line_in), npixel(npixel_in), rmfft(cont_in), pfft(npixel_in, npixon_in)
 {
   pixon_map = new unsigned int[npixel];
+  pixon_map_smooth = new unsigned int[npixel];
   image = new double[npixel];
   pseudo_image = new double[npixel];
   rmline = new double[cont.size];
@@ -541,6 +543,7 @@ Pixon::~Pixon()
   {
     npixel = 0;
     delete[] pixon_map;
+    delete[] pixon_map_smooth;
     delete[] image;
     delete[] pseudo_image;
     delete[] rmline;
@@ -555,8 +558,8 @@ Pixon::~Pixon()
   }
 }
 
-/* linear interplolation  */
-double Pixon::interp(double t)
+/* linear line interplolation  */
+double Pixon::interp_line(double t)
 {
   int it;
 
@@ -568,6 +571,19 @@ double Pixon::interp(double t)
     return rmline[cont.size -1];
 
   return rmline[it] + (rmline[it+1] - rmline[it])/dt * (t - cont.time[it]);
+}
+
+/* linear cont interplolation  */
+double Pixon::interp_cont(double t)
+{
+  int it;
+
+  it = (t - cont.time[0])/dt;
+
+  if(it < 0 || it >= cont.size -1)
+    return 0.0;
+
+  return cont.flux[it] + (cont.flux[it+1] - cont.flux[it])/dt * (t - cont.time[it]);
 }
 
 /* compute rm amd pixon convolutions */
@@ -589,7 +605,7 @@ void Pixon::compute_rm_pixon(const double *x)
   for(i=0; i<line.size; i++)
   {
     t = line.time[i];
-    itline[i] = interp(t);
+    itline[i] = interp_line(t);
     residual[i] = itline[i] - line.flux[i];
   }
 }
@@ -620,6 +636,7 @@ double Pixon::compute_mem(const double *x)
   {
     Itot += image[i];
   }
+  Itot += EPS;
   
   num = compute_pixon_number();
   alpha = log(num)/log(npixel);
@@ -627,7 +644,7 @@ double Pixon::compute_mem(const double *x)
   mem = 0.0;
   for(i=0; i<npixel; i++)
   {
-    mem += image[i]/Itot * log(image[i]/Itot + EPS);
+    mem += (image[i]/Itot) * log(image[i]/Itot + EPS);
   }
   
   mem *= 2.0*alpha;
@@ -655,7 +672,7 @@ void Pixon::compute_chisquare_grad(const double *x)
       for(j=jrange1; j<=jrange2; j++)
       {
         tau = j * dt;
-        cont_intp = interp(t-tau);
+        cont_intp = interp_cont(t-tau);
         K = pixon_function(j, i, psize);
         grad_in += K * cont_intp;
       }
@@ -690,7 +707,7 @@ void Pixon::compute_chisquare_grad_pixon_low()
       for(j=jrange1; j<=jrange2; j++)
       {
         tau = j * dt;
-        cont_intp = interp(t-tau);
+        cont_intp = interp_cont(t-tau);
         K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_low);
         grad_in += K * cont_intp;
       }
@@ -725,7 +742,7 @@ void Pixon::compute_chisquare_grad_pixon_up()
       for(j=jrange1; j<jrange2; j++)
       {
         tau = j * dt;
-        cont_intp = interp(t-tau);
+        cont_intp = interp_cont(t-tau);
         K =  pixon_function(j, i, psize_up) - pixon_function(j, i, psize);
         grad_in += K * cont_intp;
       }
@@ -904,6 +921,10 @@ bool Pixon::update_pixon_map()
       }
     }
   }
+  if(flag == true)
+  {
+    //smooth_pixon_map();
+  }
   return flag;
 }
 
@@ -932,7 +953,29 @@ bool Pixon::increase_pixon_map()
       }
     }
   }
+  /*if(flag == true)
+  {
+    smooth_pixon_map();
+  }*/
   return flag;
+}
+
+void Pixon::smooth_pixon_map()
+{
+  int i;
+  unsigned int *ptr;
+
+  pixon_map_smooth[0] = pixon_map[0];
+  pixon_map_smooth[npixel-1] = pixon_map[npixel-1];
+
+  for(i=1; i<npixel-1; i++)
+  {
+    pixon_map_smooth[i] = sqrt(pixon_map[i-1] * pixon_map[i+1]);
+  }
+  
+  ptr = pixon_map;
+  pixon_map = pixon_map_smooth;
+  pixon_map_smooth = ptr; 
 }
 /*==================================================================*/
 /* pixon functions */

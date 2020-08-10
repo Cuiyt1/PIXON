@@ -121,7 +121,7 @@ void run(Data & cont, Data& line, double *pimg, unsigned int npixel, unsigned in
   double *image=new double[npixel], *itline=new double[pixon.line.size];
   
   /* TNC */
-  int rc, maxCGit = npixel, maxnfeval = 2000, nfeval, niter;
+  int rc, maxCGit = npixel, maxnfeval = 10000, nfeval, niter;
   double low[npixel], up[npixel], eta = -1.0, stepmx = -1.0,
     accuracy =  1.0e-5, fmin = pixon.line.size, ftol = 1.0e-5, xtol = 1.0e-5, pgtol = 1.0e-5,
     rescale = -1.0;
@@ -227,7 +227,7 @@ void run_uniform(Data & cont, Data& line, double *pimg, unsigned int npixel, uns
   double f, f_old, num_old, num, df, dnum, chisq, chisq_old;
   double *image=new double[npixel], *itline=new double[pixon.line.size];
  
-  int rc, maxCGit = npixel, maxnfeval = 2000, nfeval, niter;
+  int rc, maxCGit = npixel, maxnfeval = 10000, nfeval, niter;
   double low[npixel], up[npixel],
     eta = -1.0, stepmx = -1.0,
     accuracy = 1.0e-5, fmin = pixon.line.size, ftol = 1.0e-5, xtol = 1.0e-5, pgtol = 1.0e-5,

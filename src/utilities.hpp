@@ -150,6 +150,7 @@ class Pixon
     ~Pixon();
     double interp_line(double t);
     double interp_cont(double t);
+    double interp_pixon(double t);
     void compute_rm_pixon(const double *x);
     double compute_chisquare(const double *x);
     double compute_mem(const double *x);
@@ -190,6 +191,8 @@ class Pixon
     double *grad_mem;
     double *grad_mem_pixon_low;
     double *grad_mem_pixon_up;
+    double *resp_pixon;
+    double *conv_pixon;
 
   private:
 };

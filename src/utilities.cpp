@@ -773,7 +773,7 @@ void Pixon::compute_chisquare_grad_pixon_up()
 
 void Pixon::compute_mem_grad(const double *x)
 {
-  double Itot, num, alpha, grad_in, grad_all, grad_in_all, psize, K;
+  double Itot, num, alpha, grad_in, psize, K;
   int i, j, m, jrange1, jrange2, joffset;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
@@ -790,27 +790,19 @@ void Pixon::compute_mem_grad(const double *x)
     jrange1 = fmax(i - joffset, 0.0);
     jrange2 = fmin(i + joffset, npixel-1);
 
-    grad_all = 0.0;
     grad_in = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
       K = pixon_function(i, j, psize);
-      grad_all += K; 
       grad_in += (1.0 + log(image[j]/Itot)) * K;
     }
-    grad_in_all = 0.0;
-    for(j=0; j<npixel; j++)
-    {
-      grad_in_all = (1.0 + log(image[j]/Itot)) * image[j]/Itot;
-    }
-    grad_in_all *= grad_all;
-    grad_mem[i] = 2.0* alpha * pseudo_image[i] * ( grad_in - grad_in_all) / Itot;
+    grad_mem[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
   }
 }
 
 void Pixon::compute_mem_grad_pixon_low()
 {
-  double Itot, num, alpha, grad_in, grad_all, grad_in_all, psize, psize_low, K;
+  double Itot, num, alpha, grad_in, psize, psize_low, K;
   int i, j, jrange1, jrange2, joffset, joffset_low;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
@@ -830,26 +822,18 @@ void Pixon::compute_mem_grad_pixon_low()
     jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
 
     grad_in = 0.0;
-    grad_all = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
       K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_low);
       grad_in += (1.0 + log(image[j]/Itot)) * K;
-      grad_all += K; 
     } 
-    grad_in_all = 0.0;
-    for(j=0; j<npixel; j++)
-    {
-      grad_in_all = (1.0 + log(image[j]/Itot)) * image[j]/Itot;
-    }
-    grad_in_all *= grad_all;
-    grad_mem_pixon_low[i] = 2.0* alpha * pseudo_image[i] * (grad_in - grad_in_all) / Itot;
+    grad_mem_pixon_low[i] = 2.0* alpha * pseudo_image[i] * (grad_in) / Itot;
   }
 }
 
 void Pixon::compute_mem_grad_pixon_up()
 {
-  double Itot, num, alpha, grad_in, grad_all, grad_in_all, psize, psize_up, K;
+  double Itot, num, alpha, grad_in, psize, psize_up, K;
   int i, j, jrange1, jrange2, joffset, joffset_up;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
@@ -870,21 +854,12 @@ void Pixon::compute_mem_grad_pixon_up()
     jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
     
     grad_in = 0.0;
-    grad_all = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
       K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_up);
       grad_in += (1.0 + log(image[j]/Itot)) * K;
-
-      grad_all += K; 
     } 
-    grad_in_all = 0.0;
-    for(j=0; j<npixel; j++)
-    {
-      grad_in_all = (1.0 + log(image[j]/Itot)) * image[j]/Itot;
-    }
-    grad_in_all *= grad_all;
-    grad_mem_pixon_up[i] = 2.0* alpha * pseudo_image[i] * (grad_in - grad_in_all) / Itot;
+    grad_mem_pixon_up[i] = 2.0* alpha * pseudo_image[i] * (grad_in) / Itot;
   }
 }
 

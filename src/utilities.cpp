@@ -25,21 +25,19 @@ using namespace std;
 /*==================================================================*/
 /* class PixonBasis */
 
-double PixonBasis::coeff1_gaussian = exp(-0.5);
-double PixonBasis::coeff2_gaussian =(1.0 - exp(-0.5));
-double PixonBasis::norm_gaussian= (sqrt(2*M_PI) * erf(1.0/sqrt(2.0)) - 2*exp(-0.5))/PixonBasis::coeff2_gaussian;
+double PixonBasis::norm_gaussian= sqrt(2*M_PI) * erf(3.0/sqrt(2.0));
 
 /* modified gaussian function, truncated at factor * psize */
 double PixonBasis::gaussian(double x, double y, double psize)
 {
   if(fabs(y-x) <= pixon_size_factor * psize)
-    return gaussian_norm(psize)/coeff2_gaussian * (exp( -0.5*(y-x)*(y-x)/psize/psize ) - coeff1_gaussian);
+    return gaussian_norm(psize) * exp( -0.5*(y-x)*(y-x)/(psize/3*psize/3) );
   else 
     return 0.0;
 }
 double PixonBasis::gaussian_norm(double psize)
 {
-  return 1.0/(norm_gaussian*psize);
+  return 1.0/(norm_gaussian*psize/3.0);
 }
 
 /* prarabloid function, truncated at factor * psize */
@@ -78,7 +76,18 @@ double PixonBasis::triangle_norm(double psize)
 {
   return 1.0/(pixon_size_factor * psize);
 }
-
+double PixonBasis::lorentz(double x, double y, double psize)
+{
+  if(fabs(y-x) <= pixon_size_factor * psize)
+    return lorentz_norm(psize) * ((pixon_size_factor/3.0 * psize) * (pixon_size_factor/3.0 * psize)) 
+           / ((x-y)*(x-y) + (pixon_size_factor/3.0 * psize) * (pixon_size_factor/3.0 * psize));
+  else 
+    return 0.0;
+}
+double PixonBasis::lorentz_norm(double psize)
+{
+  return 1.0/(2.0*psize/3.0 * atan(pixon_size_factor*3.0));
+}
 /*==================================================================*/
 /* class Data */
 Data::Data()
@@ -764,8 +773,8 @@ void Pixon::compute_chisquare_grad_pixon_up()
 
 void Pixon::compute_mem_grad(const double *x)
 {
-  double Itot, num, alpha, grad_in, psize, K;
-  int i, j, jrange1, jrange2, joffset;
+  double Itot, num, alpha, grad_in, grad_all, grad_in_all, psize, K;
+  int i, j, m, jrange1, jrange2, joffset;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
   {
@@ -776,23 +785,32 @@ void Pixon::compute_mem_grad(const double *x)
   
   for(i=0; i<npixel; i++)
   {       
-    grad_in = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
     joffset = ceil(pixon_size_factor * psize);
     jrange1 = fmax(i - joffset, 0.0);
     jrange2 = fmin(i + joffset, npixel-1);
+
+    grad_all = 0.0;
+    grad_in = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
       K = pixon_function(i, j, psize);
+      grad_all += K; 
       grad_in += (1.0 + log(image[j]/Itot)) * K;
-    } 
-    grad_mem[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
+    }
+    grad_in_all = 0.0;
+    for(j=0; j<npixel; j++)
+    {
+      grad_in_all = (1.0 + log(image[j]/Itot)) * image[j]/Itot;
+    }
+    grad_in_all *= grad_all;
+    grad_mem[i] = 2.0* alpha * pseudo_image[i] * ( grad_in - grad_in_all) / Itot;
   }
 }
 
 void Pixon::compute_mem_grad_pixon_low()
 {
-  double Itot, num, alpha, grad_in, psize, psize_low, K;
+  double Itot, num, alpha, grad_in, grad_all, grad_in_all, psize, psize_low, K;
   int i, j, jrange1, jrange2, joffset, joffset_low;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
@@ -804,25 +822,34 @@ void Pixon::compute_mem_grad_pixon_low()
 
   for(i=0; i<npixel; i++)
   {       
-    grad_in = 0.0;
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_low = pfft.pixon_sizes[pixon_map[i]-1];
     joffset = ceil(pixon_size_factor * psize);
     joffset_low = ceil(pixon_size_factor * psize_low);
     jrange1 = fmax(fmin(i - joffset, i - joffset_low), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
+
+    grad_in = 0.0;
+    grad_all = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
       K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_low);
       grad_in += (1.0 + log(image[j]/Itot)) * K;
+      grad_all += K; 
     } 
-    grad_mem_pixon_low[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
+    grad_in_all = 0.0;
+    for(j=0; j<npixel; j++)
+    {
+      grad_in_all = (1.0 + log(image[j]/Itot)) * image[j]/Itot;
+    }
+    grad_in_all *= grad_all;
+    grad_mem_pixon_low[i] = 2.0* alpha * pseudo_image[i] * (grad_in - grad_in_all) / Itot;
   }
 }
 
 void Pixon::compute_mem_grad_pixon_up()
 {
-  double Itot, num, alpha, grad_in, psize, psize_up, K;
+  double Itot, num, alpha, grad_in, grad_all, grad_in_all, psize, psize_up, K;
   int i, j, jrange1, jrange2, joffset, joffset_up;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
@@ -834,19 +861,30 @@ void Pixon::compute_mem_grad_pixon_up()
 
   for(i=0; i<npixel; i++)
   {       
-    grad_in = 0.0;
+    
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_up = pfft.pixon_sizes[pixon_map[i]+1];
     joffset = ceil(pixon_size_factor * psize);
     joffset_up = ceil(pixon_size_factor * psize_up);
     jrange1 = fmax(fmin(i - joffset, i - joffset_up), 0.0);
     jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
+    
+    grad_in = 0.0;
+    grad_all = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
       K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_up);
       grad_in += (1.0 + log(image[j]/Itot)) * K;
+
+      grad_all += K; 
     } 
-    grad_mem_pixon_up[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
+    grad_in_all = 0.0;
+    for(j=0; j<npixel; j++)
+    {
+      grad_in_all = (1.0 + log(image[j]/Itot)) * image[j]/Itot;
+    }
+    grad_in_all *= grad_all;
+    grad_mem_pixon_up[i] = 2.0* alpha * pseudo_image[i] * (grad_in - grad_in_all) / Itot;
   }
 }
 
@@ -874,6 +912,22 @@ void Pixon::reduce_pixon_map_all()
   {
     pixon_map[i]--;
   }
+}
+
+bool Pixon::reduce_pixon_map_uniform()
+{
+  int i;
+  bool flag = false;
+  for(i=0; i<npixel; i++)
+  {
+    if(pixon_map[i] > pixon_map_low_bound + 1)
+    {
+      reduce_pixon_map(i);
+      flag = true;
+    }
+  }
+
+  return flag;
 }
 
 void Pixon::increase_pixon_map_all()
@@ -931,10 +985,10 @@ bool Pixon::update_pixon_map()
       }
     }
   }
-  /*if(flag == true)
+  if(flag == true)
   {
     smooth_pixon_map();
-  }*/
+  }
   return flag;
 }
 
@@ -963,10 +1017,10 @@ bool Pixon::increase_pixon_map()
       }
     }
   }
-  /*if(flag == true)
+  if(flag == true)
   {
     smooth_pixon_map();
-  }*/
+  }
   return flag;
 }
 
@@ -980,12 +1034,12 @@ void Pixon::smooth_pixon_map()
 
   for(i=1; i<npixel-1; i++)
   {
-    pixon_map_smooth[i] = sqrt(pixon_map[i-1] * pixon_map[i+1]);
+    pixon_map_smooth[i] = (0.5*pixon_map[i-1] + pixon_map[i] + 0.5*pixon_map[i+1])/2.0;
   }
   
   ptr = pixon_map;
   pixon_map = pixon_map_smooth;
-  pixon_map_smooth = ptr; 
+  pixon_map_smooth = ptr;
 }
 /*==================================================================*/
 /* pixon functions */

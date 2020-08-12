@@ -40,7 +40,7 @@ class Pixon;
 class PixonBasis
 {
   public:
-    static double norm_gaussian, coeff1_gaussian, coeff2_gaussian;
+    static double norm_gaussian;
     static double gaussian(double x, double y, double psize);
     static double gaussian_norm(double psize);
     static double parabloid(double x, double y, double psize);
@@ -49,6 +49,8 @@ class PixonBasis
     static double tophat_norm(double psize);
     static double triangle(double x, double y, double psize);
     static double triangle_norm(double psize);
+    static double lorentz(double x, double y, double psize);
+    static double lorentz_norm(double psize);
 };
 
 /* 
@@ -162,6 +164,7 @@ class Pixon
     void compute_mem_grad_pixon_up();
     double compute_pixon_number();
     void reduce_pixon_map_all();
+    bool reduce_pixon_map_uniform();
     void increase_pixon_map_all();
     void reduce_pixon_map(unsigned int);
     void increase_pixon_map(unsigned int);

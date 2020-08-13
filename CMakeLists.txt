@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(pixon LANGUAGES CXX C)
-add_executable(pixon src/main.cpp src/utilities.cpp src/tnc.c)
+
+set(SRC "src")
+
+add_executable(pixon ${SRC}/main.cpp)
+
+add_subdirectory(${SRC})
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -18,4 +23,4 @@ find_path(FFTW3_INCLUDE_DIR fftw3.h)
 find_library(FFTW3_LIB fftw3)
 include_directories(${FFTW3_INCLUDE_DIR})
 
-target_link_libraries(pixon ${NLOPT_LIB} ${FFTW3_LIB})
+target_link_libraries(pixon utilities ${NLOPT_LIB} ${FFTW3_LIB})

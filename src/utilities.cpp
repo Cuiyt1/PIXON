@@ -1013,7 +1013,7 @@ bool Pixon::increase_pixon_map()
 
 bool Pixon::smooth_pixon_map()
 {
-  int i;
+  int i, id;
   int *ptr;
 
   pixon_map_smooth[0] = pixon_map[0];
@@ -1022,6 +1022,13 @@ bool Pixon::smooth_pixon_map()
   for(i=1; i<npixel-1; i++)
   {
     pixon_map_smooth[i] = (0.05*pixon_map[i-1] + pixon_map[i] + 0.05*pixon_map[i+1])/1.1;
+    
+    id = pixon_map_smooth[i] - pixon_map[i];
+    if(id != 0)
+    {
+      pfft.pixon_sizes_num[pixon_map[i]]--;
+      pfft.pixon_sizes_num[pixon_map_smooth[i]]++;
+    }
   }
   
   ptr = pixon_map;

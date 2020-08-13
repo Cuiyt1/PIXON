@@ -16,9 +16,9 @@
 
 #define EPS (1.0e-50)
 
-unsigned int pixon_size_factor;
-unsigned int pixon_sub_factor;
-unsigned int pixon_map_low_bound;
+int pixon_size_factor;
+int pixon_sub_factor;
+int pixon_map_low_bound;
 
 using namespace std;
 
@@ -97,7 +97,7 @@ Data::Data()
 }
 
 /* constructor with a size of n */
-Data::Data(unsigned int n)
+Data::Data(int n)
 {
   if(n > 0)
   {
@@ -166,7 +166,7 @@ void Data::load(const string& fname)
 {
   ifstream fin;
   string line;
-  unsigned int i;
+  int i;
   
   /* first determine number of lines */
   fin.open(fname);
@@ -225,7 +225,7 @@ DataFFT::DataFFT()
   data_real = resp_real = conv_real = NULL;
 }
 
-DataFFT::DataFFT(unsigned int nd_in, double fft_dx, unsigned int npad_in)
+DataFFT::DataFFT(int nd_in, double fft_dx, int npad_in)
       :nd(nd_in), npad(npad_in) 
 {
   int i;
@@ -254,7 +254,7 @@ DataFFT::DataFFT(unsigned int nd_in, double fft_dx, unsigned int npad_in)
   }
 }
 
-DataFFT::DataFFT(Data& cont, unsigned int npad_in)
+DataFFT::DataFFT(Data& cont, int npad_in)
       :nd(cont.size), npad(npad_in)
 {
   int i;
@@ -372,11 +372,11 @@ void DataFFT::convolve_simple(double *conv)
 }
 /*==================================================================*/
 /* class RMFFT */
-RMFFT::RMFFT(unsigned int n, double *cont, double norm)
+RMFFT::RMFFT(int n, double *cont, double norm)
       :DataFFT(n, norm)
 {
   /* fft of cont setup only once */
-  memcpy(data_real+npad, cont, nd*sizeof(double));
+  memcpy(data_real, cont, nd*sizeof(double));
   fftw_execute(pdata);
 }
     
@@ -387,7 +387,7 @@ RMFFT::RMFFT(Data& cont):DataFFT(cont)
 }
 
 /* convolution with resp, output to conv */
-void RMFFT::convolve(const double *resp, unsigned int n, double *conv)
+void RMFFT::convolve(const double *resp, int n, double *conv)
 {
   /* fft of resp */
   memcpy(resp_real, resp, n * sizeof(double));
@@ -404,10 +404,10 @@ PixonFFT::PixonFFT()
   pixon_sizes = NULL;
   pixon_sizes_num = NULL;
 }
-PixonFFT::PixonFFT(unsigned int npixel_in, unsigned int npixon_in)
+PixonFFT::PixonFFT(int npixel_in, int npixon_in)
       :DataFFT(npixel_in, 1.0, npixon_in*pixon_size_factor), npixon(npixon_in)
 {
-  unsigned int i;
+  int i;
 
   ipixon_min = npixon-1;
   pixon_sizes = new double[npixon];
@@ -431,7 +431,7 @@ PixonFFT::~PixonFFT()
   }
 }
 
-void PixonFFT::convolve(const double *pseudo_img, unsigned int *pixon_map, double *conv)
+void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
 {
   int ip, j;
   double psize;
@@ -498,7 +498,7 @@ void PixonFFT::increase_pixon_min()
   }
 }
 
-unsigned int PixonFFT::get_ipxion_min()
+int PixonFFT::get_ipxion_min()
 {
   return ipixon_min;
 }
@@ -510,6 +510,7 @@ Pixon::Pixon()
   npixel = 0;
   pixon_map = NULL; 
   pixon_map_smooth = NULL;
+  pixon_map_updated = NULL;
   image = pseudo_image = NULL;
   rmline = NULL;
   itline = NULL;
@@ -523,11 +524,12 @@ Pixon::Pixon()
   conv_pixon = NULL;
 }
 
-Pixon::Pixon(Data& cont_in, Data& line_in, unsigned int npixel_in,  unsigned int npixon_in)
-  :cont(cont_in), line(line_in), npixel(npixel_in), rmfft(cont_in), pfft(npixel_in, npixon_in)
+Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in)
+  :cont(cont_in), line(line_in), rmfft(cont_in), pfft(npixel_in, npixon_in), npixel(npixel_in)
 {
-  pixon_map = new unsigned int[npixel];
-  pixon_map_smooth = new unsigned int[npixel];
+  pixon_map = new int[npixel];
+  pixon_map_smooth = new int[npixel];
+  pixon_map_updated = new bool[npixel];
   image = new double[npixel];
   pseudo_image = new double[npixel];
   rmline = new double[cont.size];
@@ -543,7 +545,7 @@ Pixon::Pixon(Data& cont_in, Data& line_in, unsigned int npixel_in,  unsigned int
   conv_pixon = new double[cont.size];
 
   dt = cont.time[1]-cont.time[0];  /* time interval width of continuum light curve */
-  unsigned int i;
+  int i;
   for(i=0; i<npixel; i++)
   {
     pixon_map[i] = npixon_in-1;  /* set the largest pixon size */
@@ -557,6 +559,7 @@ Pixon::~Pixon()
     npixel = 0;
     delete[] pixon_map;
     delete[] pixon_map_smooth;
+    delete[] pixon_map_updated;
     delete[] image;
     delete[] pseudo_image;
     delete[] rmline;
@@ -617,7 +620,7 @@ double Pixon::interp_pixon(double t)
 void Pixon::compute_rm_pixon(const double *x)
 {
   int i;
-  double t, it;
+  double t;
   /* convolve with pixons */
   for(i=0; i<npixel; i++)
   {
@@ -663,7 +666,7 @@ double Pixon::compute_chisquare(const double *x)
 double Pixon::compute_mem(const double *x)
 {
   double Itot, num, alpha;
-  int i, j;
+  int i;
 
   Itot = 0.0;
   for(i=0; i<npixel; i++)
@@ -691,11 +694,10 @@ void Pixon::compute_chisquare_grad(const double *x)
   int i, k, j;
   double psize, t, grad_in, grad_out;
   for(i=0; i<npixel; i++)
-  {
-    psize = pfft.pixon_sizes[pixon_map[i]];
-    
+  {   
     for(j=0; j<npixel; j++)
     {
+      psize = pfft.pixon_sizes[pixon_map[j]];
       resp_pixon[j] = pixon_function(j, i, psize);
     }
     rmfft.convolve(resp_pixon, npixel, conv_pixon);
@@ -718,26 +720,32 @@ void Pixon::compute_chisquare_grad(const double *x)
 void Pixon::compute_chisquare_grad_pixon_low()
 {
   int i, k, j;
-  double psize, psize_low, t, cont_intp, grad_in, grad_out;
+  double psize, psize_low, t, grad_in, grad_out, K, grad_size, tau;
+  int jrange1, jrange2;
   for(i=0; i<npixel; i++)
   {
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_low = pfft.pixon_sizes[pixon_map[i]-1];
-    
-    for(j=0; j<npixel; j++)
-    {
-      resp_pixon[j] = pixon_function(j, i, psize) - pixon_function(j, i, psize_low);
-    }
-    rmfft.convolve(resp_pixon, npixel, conv_pixon);
 
+    jrange1 = fmax(0, ceil(i-psize*pixon_size_factor));
+    jrange2 = fmin(npixel-1, ceil(i+psize*pixon_size_factor));
+
+    grad_size = 0.0;
+    for(j=jrange1; j<=jrange2; j++)
+    {
+      K = pixon_function(i, j, psize) - pixon_function(i, j, psize_low);
+      grad_size +=  K * pseudo_image[j]; 
+    }
+    
     grad_out = 0.0;
+    tau = i * dt;
     for(k=0; k<line.size; k++)
     {
       t = line.time[k];
-      grad_in = interp_pixon(t);
+      grad_in = interp_cont(t - tau);
       grad_out += grad_in * residual[k]/line.error[k]/line.error[k];
     }
-    grad_pixon_low[i] = grad_out * 2.0 * pseudo_image[i];
+    grad_pixon_low[i] = grad_out * 2.0 * grad_size;
   }
 }
 
@@ -748,33 +756,40 @@ void Pixon::compute_chisquare_grad_pixon_low()
 void Pixon::compute_chisquare_grad_pixon_up()
 {
   int i, k, j;
-  double psize, psize_up, t, tau, cont_intp, grad_in, grad_out, K;
+  double psize, psize_up, t, tau, grad_in, grad_out, grad_size, K;
+  int jrange1, jrange2;
+
   for(i=0; i<npixel; i++)
   {
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_up = pfft.pixon_sizes[pixon_map[i]+1];
     
-    for(j=0; j<npixel; j++)
+    jrange1 = fmax(0, ceil(i-psize_up*pixon_size_factor));
+    jrange2 = fmin(npixel-1, ceil(i+psize_up*pixon_size_factor));
+
+    grad_size = 0.0;
+    for(j=jrange1; j<=jrange2; j++)
     {
-      resp_pixon[j] = pixon_function(j, i, psize_up) - pixon_function(j, i, psize);
+      K = pixon_function(i, j, psize_up) - pixon_function(i, j, psize);
+      grad_size +=  K * pseudo_image[j]; 
     }
-    rmfft.convolve(resp_pixon, npixel, conv_pixon);
 
     grad_out = 0.0;
+    tau = i * dt;
     for(k=0; k<line.size; k++)
     {
       t = line.time[k];
-      grad_in = interp_pixon(t);
+      grad_in = interp_cont(t - tau);
       grad_out += grad_in * residual[k]/line.error[k]/line.error[k];
     }
-    grad_pixon_up[i] = grad_out * 2.0 * pseudo_image[i];
+    grad_pixon_up[i] = grad_out * 2.0 * grad_size;
   }
 }
 
 void Pixon::compute_mem_grad(const double *x)
 {
   double Itot, num, alpha, grad_in, psize, K;
-  int i, j, m, jrange1, jrange2, joffset;
+  int i, j;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
   {
@@ -785,25 +800,21 @@ void Pixon::compute_mem_grad(const double *x)
   
   for(i=0; i<npixel; i++)
   {       
-    psize = pfft.pixon_sizes[pixon_map[i]];
-    joffset = ceil(pixon_size_factor * psize);
-    jrange1 = fmax(i - joffset, 0.0);
-    jrange2 = fmin(i + joffset, npixel-1);
-
     grad_in = 0.0;
-    for(j=jrange1; j<=jrange2; j++)
+    for(j=0; j<npixel; j++)
     {
-      K = pixon_function(i, j, psize);
+      psize = pfft.pixon_sizes[pixon_map[j]];
+      K = pixon_function(j, i, psize);
       grad_in += (1.0 + log(image[j]/Itot)) * K;
     }
-    grad_mem[i] = 2.0* alpha * pseudo_image[i] * grad_in / Itot;
+    grad_mem[i] = 2.0 * alpha * pseudo_image[i] * grad_in / Itot;
   }
 }
 
 void Pixon::compute_mem_grad_pixon_low()
 {
   double Itot, num, alpha, grad_in, psize, psize_low, K;
-  int i, j, jrange1, jrange2, joffset, joffset_low;
+  int i, j, jrange1, jrange2, grad_size;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
   {
@@ -816,25 +827,25 @@ void Pixon::compute_mem_grad_pixon_low()
   {       
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_low = pfft.pixon_sizes[pixon_map[i]-1];
-    joffset = ceil(pixon_size_factor * psize);
-    joffset_low = ceil(pixon_size_factor * psize_low);
-    jrange1 = fmax(fmin(i - joffset, i - joffset_low), 0.0);
-    jrange2 = fmin(fmax(i + joffset, i + joffset_low), npixel-1);
+    
+    jrange1 = fmax(0, ceil(i-psize*pixon_size_factor));
+    jrange2 = fmin(npixel-1, ceil(i+psize*pixon_size_factor));
 
-    grad_in = 0.0;
+    grad_size = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
-      K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_low);
-      grad_in += (1.0 + log(image[j]/Itot)) * K;
-    } 
-    grad_mem_pixon_low[i] = 2.0* alpha * pseudo_image[i] * (grad_in) / Itot;
+      K = pixon_function(i, j, psize) - pixon_function(i, j, psize_low);
+      grad_size +=  K * pseudo_image[j]; 
+    }
+    grad_in = (1.0 + log(image[i]/Itot));
+    grad_mem_pixon_low[i] = 2.0* alpha * grad_in * grad_size / Itot;
   }
 }
 
 void Pixon::compute_mem_grad_pixon_up()
 {
   double Itot, num, alpha, grad_in, psize, psize_up, K;
-  int i, j, jrange1, jrange2, joffset, joffset_up;
+  int i, j, jrange1, jrange2, grad_size;
   Itot = 0.0;
   for(i=0; i<npixel; i++)
   {
@@ -845,21 +856,20 @@ void Pixon::compute_mem_grad_pixon_up()
 
   for(i=0; i<npixel; i++)
   {       
-    
     psize = pfft.pixon_sizes[pixon_map[i]];
     psize_up = pfft.pixon_sizes[pixon_map[i]+1];
-    joffset = ceil(pixon_size_factor * psize);
-    joffset_up = ceil(pixon_size_factor * psize_up);
-    jrange1 = fmax(fmin(i - joffset, i - joffset_up), 0.0);
-    jrange2 = fmin(fmax(i + joffset, i + joffset_up), npixel-1);
     
-    grad_in = 0.0;
+    jrange1 = fmax(0, ceil(i-psize_up*pixon_size_factor));
+    jrange2 = fmin(npixel-1, ceil(i+psize_up*pixon_size_factor));
+
+    grad_size = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
-      K =  pixon_function(j, i, psize) - pixon_function(j, i, psize_up);
-      grad_in += (1.0 + log(image[j]/Itot)) * K;
-    } 
-    grad_mem_pixon_up[i] = 2.0* alpha * pseudo_image[i] * (grad_in) / Itot;
+      K = pixon_function(i, j, psize_up) - pixon_function(i, j, psize);
+      grad_size +=  K * pseudo_image[j]; 
+    }
+    grad_in = (1.0 + log(image[i]/Itot));
+    grad_mem_pixon_up[i] = 2.0* alpha * grad_in * grad_size / Itot;
   }
 }
 
@@ -869,7 +879,7 @@ double Pixon::compute_pixon_number()
   double num, psize;
     
   num = 0.0;
-  for(i=0; i<pfft.nd; i++)
+  for(i=0; i<npixel; i++)
   {
     psize = pfft.pixon_sizes[pixon_map[i]];
     num += pixon_norm(psize);
@@ -917,7 +927,7 @@ void Pixon::increase_pixon_map_all()
   }
 }
 
-void Pixon::reduce_pixon_map(unsigned int ip)
+void Pixon::reduce_pixon_map(int ip)
 {
   pfft.pixon_sizes_num[pixon_map[ip]]--;
   pixon_map[ip]--;
@@ -928,7 +938,7 @@ void Pixon::reduce_pixon_map(unsigned int ip)
   }
 }
 
-void Pixon::increase_pixon_map(unsigned int ip)
+void Pixon::increase_pixon_map(int ip)
 {
   pfft.pixon_sizes_num[pixon_map[ip]]--;
   pixon_map[ip]++;
@@ -946,6 +956,7 @@ bool Pixon::update_pixon_map()
   compute_mem_grad_pixon_low();
   for(i=0; i<npixel; i++)
   {
+    pixon_map_updated[i] = false;
     if(pixon_map[i] > pixon_map_low_bound + 1)
     {
       psize = pfft.pixon_sizes[pixon_map[i]];
@@ -955,6 +966,7 @@ bool Pixon::update_pixon_map()
       if( grad_pixon_low[i] + grad_mem_pixon_low[i] > dnum_low  * (1.0 + 1.0/sqrt(2.0*num)))
       {
         reduce_pixon_map(i);
+        pixon_map_updated[i] = true;
         cout<<"decrease "<< i <<"-th pixel to "<<pfft.pixon_sizes[pixon_map[i]]<<endl;
         flag=true;
       }
@@ -962,7 +974,7 @@ bool Pixon::update_pixon_map()
   }
   if(flag == true)
   {
-    smooth_pixon_map();
+    //flag = smooth_pixon_map();
   }
   return flag;
 }
@@ -994,27 +1006,29 @@ bool Pixon::increase_pixon_map()
   }
   if(flag == true)
   {
-    smooth_pixon_map();
+    flag = smooth_pixon_map();
   }
   return flag;
 }
 
-void Pixon::smooth_pixon_map()
+bool Pixon::smooth_pixon_map()
 {
   int i;
-  unsigned int *ptr;
+  int *ptr;
 
   pixon_map_smooth[0] = pixon_map[0];
   pixon_map_smooth[npixel-1] = pixon_map[npixel-1];
 
   for(i=1; i<npixel-1; i++)
   {
-    pixon_map_smooth[i] = (0.5*pixon_map[i-1] + pixon_map[i] + 0.5*pixon_map[i+1])/2.0;
+    pixon_map_smooth[i] = (0.05*pixon_map[i-1] + pixon_map[i] + 0.05*pixon_map[i+1])/1.1;
   }
   
   ptr = pixon_map;
   pixon_map = pixon_map_smooth;
   pixon_map_smooth = ptr;
+
+  return true;
 }
 /*==================================================================*/
 /* pixon functions */
@@ -1035,7 +1049,7 @@ double func_nlopt(const vector<double> &x, vector<double> &grad, void *f_data)
     pixon->compute_chisquare_grad(x.data());
     pixon->compute_mem_grad(x.data());
     
-    for(i=0; i<grad.size(); i++)
+    for(i=0; i<(int)grad.size(); i++)
       grad[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
   }
   chisq = pixon->compute_chisquare(x.data());

@@ -22,8 +22,8 @@ using namespace std;
 
 void test();
 void test_nlopt();
-void run_uniform(Data&, Data&, double *, int, int& );
-void run(Data&, Data&, double *, int, int& );
+void run_uniform(Data&, Data&, double *, int, int& , int);
+void run(Data&, Data&, double *, int, int&, int);
 
 int main(int argc, char ** argv)
 {
@@ -76,22 +76,21 @@ int main(int argc, char ** argv)
       pixon_function = PixonBasis::modified_gaussian;
       pixon_norm = PixonBasis::modified_gaussian_norm;
       break;
+    
+    case 2:  /* Lorentz */ 
+      pixon_size_factor = 1;     
+      pixon_map_low_bound = pixon_sub_factor - 1;
+      npixon = 30*pixon_sub_factor/pixon_size_factor;
+      pixon_function = PixonBasis::lorentz;
+      pixon_norm = PixonBasis::lorentz_norm;
+      break;
 
-    case 2:  /* parabloid */      
+    case 3:  /* parabloid */      
       pixon_size_factor = 1;
       pixon_map_low_bound = pixon_sub_factor - 1;
       npixon = 30*pixon_sub_factor/pixon_size_factor;
       pixon_function = PixonBasis::parabloid;
       pixon_norm = PixonBasis::parabloid_norm;
-      break;
-    
-    case 3:  /* top-hat */ 
-      pixon_size_factor = 1; 
-      pixon_sub_factor = 1;   
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 30*pixon_sub_factor/pixon_size_factor;
-      pixon_function = PixonBasis::tophat;
-      pixon_norm = PixonBasis::tophat_norm;
       break;
     
     case 4:  /* triangle */ 
@@ -102,12 +101,13 @@ int main(int argc, char ** argv)
       pixon_norm = PixonBasis::triangle_norm;
       break;
     
-    case 5:  /* Lorentz */ 
-      pixon_size_factor = 1;     
+    case 5:  /* top-hat */ 
+      pixon_size_factor = 1; 
+      pixon_sub_factor = 1;   
       pixon_map_low_bound = pixon_sub_factor - 1;
       npixon = 30*pixon_sub_factor/pixon_size_factor;
-      pixon_function = PixonBasis::lorentz;
-      pixon_norm = PixonBasis::lorentz_norm;
+      pixon_function = PixonBasis::tophat;
+      pixon_norm = PixonBasis::tophat_norm;
       break;
     
     default:  /* default */
@@ -121,15 +121,15 @@ int main(int argc, char ** argv)
       break;
   }
 
-  run_uniform(cont, line, pimg, npixel, npixon);
+  run_uniform(cont, line, pimg, npixel, npixon, pixon_type);
   npixon = fmin(npixon*2, 40*pixon_sub_factor);
-  run(cont, line, pimg, npixel, npixon);
+  run(cont, line, pimg, npixel, npixon, pixon_type);
   delete[] pimg;
 
   return 0;
 }
 
-void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon)
+void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
   int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
@@ -231,21 +231,25 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon)
   }while(pixon.pfft.get_ipxion_min() >= pixon_map_low_bound); 
 
   ofstream fout;
-  fout.open("data/resp_tnc.txt");
+  string fname;
+  fname = "data/resp.txt_" + to_string(pixon_type);
+  fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*i<<"  "<<exp(x_old[i])<<"   "<<image[i]<<"  "<<pixon_function(pixon.dt*i, 300.0, 50.0)<<endl;
+    fout<<pixon.dt*i<<"  "<<image[i]<<exp(x_old[i])<<"   "<<"  "<<endl;
   }
   fout.close();
-
-  fout.open("data/line_sim_tnc.txt");
+  
+  fname = "data/line_sim.txt_" + to_string(pixon_type);
+  fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
     fout<<pixon.line.time[i]<<"  "<<itline[i]<<"   "<<itline[i] - line.flux[i]<<endl;
   }
   fout.close();
 
-  fout.open("data/pixon_map.txt");
+  fname = "data/pixon_map.txt_" + to_string(pixon_type);
+  fout.open(fname);
   for(i=0; i<npixel; i++)
   {
     fout<<i*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
@@ -257,7 +261,7 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon)
 
 }
 
-void run_uniform(Data & cont, Data& line, double *pimg, int npixel, int& npixon)
+void run_uniform(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
   int i;
   Pixon pixon(cont, line, npixel, npixon);
@@ -352,14 +356,17 @@ void run_uniform(Data & cont, Data& line, double *pimg, int npixel, int& npixon)
   }
 
   ofstream fout;
-  fout.open("data/resp_tnc_uniform.txt");
+  string fname;
+  fname = "data/resp_uniform.txt_" + to_string(pixon_type);
+  fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*i<<"  "<<exp(x_old[i])<<"   "<<image[i]<<"  "<<pixon_function(pixon.dt*i, 300.0, 50.0)<<endl;
+    fout<<pixon.dt*i<<"   "<<image[i]<<"  "<<exp(x_old[i])<<endl;
   }
   fout.close();
-
-  fout.open("data/line_sim_tnc_uniform.txt");
+  
+  fname = "data/line_sim_uniform.txt_" + to_string(pixon_type);
+  fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
     fout<<pixon.line.time[i]<<"  "<<itline[i]<<"   "<<itline[i] - line.flux[i]<<endl;

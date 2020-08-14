@@ -34,7 +34,7 @@ int main(int argc, char ** argv)
   }
   int pixon_type = atoi(argv[1]);
 
-  cout<<"Pixon type: "<<pixon_type<<endl;
+  cout<<"Pixon type: "<<pixon_type<<","<<PixonBasis::pixonbasis_name[pixon_type]<<endl;
 
   Data cont, line;
   string fcon, fline;
@@ -57,14 +57,27 @@ int main(int argc, char ** argv)
     case 0:  /* Gaussian */
       pixon_size_factor = 1;
       pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 30*pixon_sub_factor;
+      npixon = 40*pixon_sub_factor;
       PixonBasis::norm_gaussian = sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0));
 
       pixon_function = PixonBasis::gaussian;
       pixon_norm = PixonBasis::gaussian_norm;
       break;
     
-    case 1:  /* parabloid */      
+    case 1:
+      pixon_size_factor = 1;
+      pixon_map_low_bound = pixon_sub_factor - 1;
+      npixon = 40*pixon_sub_factor;
+      PixonBasis::coeff1_modified_gaussian = exp(-0.5 * pixon_size_factor*3.0*pixon_size_factor*3.0);
+      PixonBasis::coeff2_modified_gaussian = 1.0 - PixonBasis::coeff1_modified_gaussian;
+      PixonBasis::norm_gaussian = (sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0)) 
+                    - 2.0*3.0*pixon_size_factor * PixonBasis::coeff1_modified_gaussian)/PixonBasis::coeff2_modified_gaussian;
+      
+      pixon_function = PixonBasis::modified_gaussian;
+      pixon_norm = PixonBasis::modified_gaussian_norm;
+      break;
+
+    case 2:  /* parabloid */      
       pixon_size_factor = 1;
       pixon_map_low_bound = pixon_sub_factor - 1;
       npixon = 30*pixon_sub_factor/pixon_size_factor;
@@ -72,7 +85,7 @@ int main(int argc, char ** argv)
       pixon_norm = PixonBasis::parabloid_norm;
       break;
     
-    case 2:  /* top-hat */ 
+    case 3:  /* top-hat */ 
       pixon_size_factor = 1; 
       pixon_sub_factor = 1;   
       pixon_map_low_bound = pixon_sub_factor - 1;
@@ -81,7 +94,7 @@ int main(int argc, char ** argv)
       pixon_norm = PixonBasis::tophat_norm;
       break;
     
-    case 3:  /* triangle */ 
+    case 4:  /* triangle */ 
       pixon_size_factor = 1;     
       pixon_map_low_bound = pixon_sub_factor - 1;
       npixon = 30*pixon_sub_factor/pixon_size_factor;
@@ -89,7 +102,7 @@ int main(int argc, char ** argv)
       pixon_norm = PixonBasis::triangle_norm;
       break;
     
-    case 4:  /* Lorentz */ 
+    case 5:  /* Lorentz */ 
       pixon_size_factor = 1;     
       pixon_map_low_bound = pixon_sub_factor - 1;
       npixon = 30*pixon_sub_factor/pixon_size_factor;
@@ -109,7 +122,7 @@ int main(int argc, char ** argv)
   }
 
   run_uniform(cont, line, pimg, npixel, npixon);
-  npixon = fmin(npixon*2, 30*pixon_sub_factor);
+  npixon = fmin(npixon*2, 40*pixon_sub_factor);
   run(cont, line, pimg, npixel, npixon);
   delete[] pimg;
 
@@ -201,8 +214,8 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon)
     df = f-f_old;
     dnum = num - num_old;
 
-    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
-      break;
+    //if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    //  break;
 
     flag = pixon.update_pixon_map();
 

@@ -41,8 +41,13 @@ class PixonBasis
 {
   public:
     static double norm_gaussian;
+    static double coeff1_modified_gaussian;
+    static double coeff2_modified_gaussian;
+    static double norm_modified_gaussian;
     static double gaussian(double x, double y, double psize);
     static double gaussian_norm(double psize);
+    static double modified_gaussian(double x, double y, double psize);
+    static double modified_gaussian_norm(double psize);
     static double parabloid(double x, double y, double psize);
     static double parabloid_norm(double psize);
     static double tophat(double x, double y, double psize);
@@ -51,6 +56,7 @@ class PixonBasis
     static double triangle_norm(double psize);
     static double lorentz(double x, double y, double psize);
     static double lorentz_norm(double psize);
+    static string pixonbasis_name[];
 };
 
 /* 

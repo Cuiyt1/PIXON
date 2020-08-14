@@ -26,6 +26,11 @@ using namespace std;
 /* class PixonBasis */
 
 double PixonBasis::norm_gaussian= sqrt(2*M_PI) * erf(3.0/sqrt(2.0));
+double PixonBasis::coeff1_modified_gaussian = exp(-0.5*9.0);
+double PixonBasis::coeff2_modified_gaussian =(1.0 - exp(-0.5*9.0));
+double PixonBasis::norm_modified_gaussian= (sqrt(2*M_PI) * erf(3.0/sqrt(2.0)) - 2*3.0*exp(-0.5*9.0))/PixonBasis::coeff2_modified_gaussian;
+
+string PixonBasis::pixonbasis_name[] = {"Gaussian", "modified Gaussian", "parabloid", "top-hat", "Lorentz"};
 
 /* modified gaussian function, truncated at factor * psize */
 double PixonBasis::gaussian(double x, double y, double psize)
@@ -38,6 +43,19 @@ double PixonBasis::gaussian(double x, double y, double psize)
 double PixonBasis::gaussian_norm(double psize)
 {
   return 1.0/(norm_gaussian*psize/3.0);
+}
+
+/* modified gaussian function, truncated at factor * psize */
+double PixonBasis::modified_gaussian(double x, double y, double psize)
+{
+  if(fabs(y-x) <= pixon_size_factor * psize)
+    return gaussian_norm(psize)/coeff2_modified_gaussian * (exp( -0.5*(y-x)*(y-x)/(psize/3*psize/3) ) - coeff1_modified_gaussian);
+  else 
+    return 0.0;
+}
+double PixonBasis::modified_gaussian_norm(double psize)
+{
+  return 1.0/(norm_modified_gaussian*psize/3.0);
 }
 
 /* prarabloid function, truncated at factor * psize */

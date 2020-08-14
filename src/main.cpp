@@ -51,7 +51,7 @@ int main(int argc, char ** argv)
   pixon_sub_factor = 1;
   pixon_size_factor = 1;
   pixon_map_low_bound = pixon_sub_factor - 1;
-  npixon = 40*pixon_sub_factor/pixon_size_factor;
+  npixon = 10*pixon_sub_factor/pixon_size_factor;
 
   tau_range = 900.0;
   npixel = tau_range / (cont.time[1]-cont.time[0]);
@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
   }
 
   run_uniform(cont, line, pimg, npixel, npixon, pixon_type);
-  npixon = fmin(npixon*2, 40*pixon_sub_factor);
+  npixon = fmax(10, fmin(npixon*2, 40*pixon_sub_factor));
   run(cont, line, pimg, npixel, npixon, pixon_type);
   delete[] pimg;
 

@@ -143,18 +143,19 @@ class PixonFFT:public DataFFT
 
     friend class Pixon;
 
-    int npixon;  /* number of pixons */
-    int ipixon_min;
-    double *pixon_sizes; /* sizes of pixons */
-    double *pixon_sizes_num;
+    int npixon;  /* total number of pixons */
+    int ipixon_min; /* minimum pixon index */
+    double *pixon_sizes; /* pixon sizes */
+    double *pixon_sizes_num; /* number of pixon at each size */
   protected:
 };
 
+/* class Pixon */
 class Pixon
 {
   public:
     Pixon();
-    Pixon(Data& cont, Data& line, int npixel_in,  int npixon_in);
+    Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in);
     ~Pixon();
     double interp_line(double t);
     double interp_cont(double t);
@@ -182,20 +183,20 @@ class Pixon
     RMFFT rmfft;
     PixonFFT pfft;
 
-    int npixel;
-    int *pixon_map;
-    int *pixon_map_smooth;
-    bool *pixon_map_updated;
-    double *image;
-    double *pseudo_image;
+    int npixel;   /* number of pixels */
+    int *pixon_map;   /* pixon map */
+    int *pixon_map_smooth;  /* intermediate array for smoothing pixon map */
+    bool *pixon_map_updated;  /* pixons updated */
+    double *image;           /* image */
+    double *pseudo_image;    /* pseudo image */
 
-    double dt; 
-    double chisq;
-    double mem;
-    double *rmline;
-    double *itline; /* interpolation */
-    double *residual; 
-    double *grad_pixon_low;
+    double dt;          /* time interval of continuum, image grid */
+    double chisq;       /* chi square */
+    double mem;         /* entropy */
+    double *rmline;     /* reverberated line */
+    double *itline;     /* interpolation of line to observed epochs */
+    double *residual;   /* residual */
+    double *grad_pixon_low;  
     double *grad_pixon_up;
     double *grad_chisq;
     double *grad_mem;

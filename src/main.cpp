@@ -49,15 +49,17 @@ int main(int argc, char ** argv)
   double *pimg;
 
   pixon_sub_factor = 1;
+  pixon_size_factor = 1;
+  pixon_map_low_bound = pixon_sub_factor - 1;
+  npixon = 40*pixon_sub_factor/pixon_size_factor;
+
   tau_range = 900.0;
   npixel = tau_range / (cont.time[1]-cont.time[0]);
   pimg = new double[npixel];
   switch(pixon_type)
   {
     case 0:  /* Gaussian */
-      pixon_size_factor = 1;
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 40*pixon_sub_factor;
+      
       PixonBasis::norm_gaussian = sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0));
 
       pixon_function = PixonBasis::gaussian;
@@ -65,9 +67,6 @@ int main(int argc, char ** argv)
       break;
     
     case 1:
-      pixon_size_factor = 1;
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 40*pixon_sub_factor;
       PixonBasis::coeff1_modified_gaussian = exp(-0.5 * pixon_size_factor*3.0*pixon_size_factor*3.0);
       PixonBasis::coeff2_modified_gaussian = 1.0 - PixonBasis::coeff1_modified_gaussian;
       PixonBasis::norm_gaussian = (sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0)) 
@@ -78,43 +77,28 @@ int main(int argc, char ** argv)
       break;
     
     case 2:  /* Lorentz */ 
-      pixon_size_factor = 1;     
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 30*pixon_sub_factor/pixon_size_factor;
       pixon_function = PixonBasis::lorentz;
       pixon_norm = PixonBasis::lorentz_norm;
       break;
 
     case 3:  /* parabloid */      
-      pixon_size_factor = 1;
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 30*pixon_sub_factor/pixon_size_factor;
       pixon_function = PixonBasis::parabloid;
       pixon_norm = PixonBasis::parabloid_norm;
       break;
     
     case 4:  /* triangle */ 
-      pixon_size_factor = 1;     
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 30*pixon_sub_factor/pixon_size_factor;
       pixon_function = PixonBasis::triangle;
       pixon_norm = PixonBasis::triangle_norm;
       break;
     
     case 5:  /* top-hat */ 
-      pixon_size_factor = 1; 
-      pixon_sub_factor = 1;   
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 30*pixon_sub_factor/pixon_size_factor;
+      pixon_sub_factor = 1; /* enforce to 1 */
       pixon_function = PixonBasis::tophat;
       pixon_norm = PixonBasis::tophat_norm;
       break;
     
     default:  /* default */
-      pixon_size_factor = 1;
-      pixon_map_low_bound = pixon_sub_factor - 1;
-      npixon = 30*pixon_sub_factor;
-      PixonBasis::norm_gaussian = sqrt(2.0*M_PI) * erf(pixon_size_factor/sqrt(2.0));
+      PixonBasis::norm_gaussian = sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0));
 
       pixon_function = PixonBasis::gaussian;
       pixon_norm = PixonBasis::gaussian_norm;

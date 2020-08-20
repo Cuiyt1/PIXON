@@ -56,6 +56,8 @@ class ContModel
     
     int nq; 
     int num_params;
+    int num_params_var;
+    int num_params_drw;
     double **par_range_model;
     int *par_fix;
     double *par_fix_val;

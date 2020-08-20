@@ -179,7 +179,35 @@ ContModel::ContModel(Data& cont_in)
   nq = 1;
   compute_mean_error();
 
-  num_params = 3 + nq;
+  /* continuum reconstruction */
+  int n;
+  double dt = (cont.time[cont.size-1] - cont.time[0])/(cont.size-1);
+  double tback = 1000.0, tforward = 500.0;
+
+  dt = fmax(dt, 1.0);
+  n = (cont.time[cont.size - 1] + tforward - (cont.time[0] - tback))/dt;
+  cout<<"size: "<<n<<endl;
+  cont_recon.set_size(n);
+  for(i=0; i<cont_recon.size; i++)
+  {
+    cont_recon.time[i] = cont.time[0] - tback + dt * i;
+  }
+  size_max = fmax(cont.size, cont_recon.size);
+  workspace = new double[size_max*15];
+  workspace_uv = new double[2*cont_recon.size];
+  Larr_data = new double[cont.size*nq];
+  for(i=0; i<cont.size; i++)
+  {
+    Larr_data[i*nq+0] = 1.0;
+  }
+  USmat = new double [cont.size * cont_recon.size];
+  PEmat1 = new double [cont.size * cont_recon.size];
+  PEmat2 = new double [cont_recon.size * cont_recon.size];
+
+  /* dnest configuration */
+  num_params_drw = 3; /* syserr, sigma, and tau */
+  num_params_var = num_params_drw + nq;
+  num_params = num_params_var;
   par_range_model = new double * [num_params];
   for(i=0; i<num_params; i++)
   {
@@ -242,31 +270,6 @@ ContModel::ContModel(Data& cont_in)
   fptrset->perturb = perturb_cont;
   fptrset->print_particle = print_particle_cont;
   fptrset->log_likelihoods_cal = prob_cont;
-
-  /* continuum reconstruction */
-  int n;
-  double dt = (cont.time[cont.size-1] - cont.time[0])/(cont.size-1);
-  double tback = 1000.0, tforward = 500.0;
-
-  dt = fmax(dt, 1.0);
-  n = (cont.time[cont.size - 1] + tforward - (cont.time[0] - tback))/dt;
-  cout<<"size: "<<n<<endl;
-  cont_recon.set_size(n);
-  for(i=0; i<cont_recon.size; i++)
-  {
-    cont_recon.time[i] = cont.time[0] - tback + dt * i;
-  }
-  size_max = fmax(cont.size, cont_recon.size);
-  workspace = new double[size_max*15];
-  workspace_uv = new double[2*cont_recon.size];
-  Larr_data = new double[cont.size*nq];
-  for(i=0; i<cont.size; i++)
-  {
-    Larr_data[i*nq+0] = 1.0;
-  }
-  USmat = new double [cont.size * cont_recon.size];
-  PEmat1 = new double [cont.size * cont_recon.size];
-  PEmat2 = new double [cont_recon.size * cont_recon.size];
 }
 
 ContModel::~ContModel()
@@ -455,7 +458,7 @@ void ContModel::recon()
 
   // q = uq + (hat q)
   Chol_decomp_L(Cq, nq, &info);
-  multiply_matvec(Cq, &pm[3], nq, yq);
+  multiply_matvec(Cq, &pm[num_params_drw], nq, yq);
   for(i=0; i<nq; i++)
     yq[i] += ybuf[i];
   
@@ -535,7 +538,7 @@ void ContModel::recon(const void *model)
 
   // q = uq + (hat q)
   Chol_decomp_L(Cq, nq, &info);
-  multiply_matvec(Cq, &pm[3], nq, yq);
+  multiply_matvec(Cq, &pm[num_params_drw], nq, yq);
   for(i=0; i<nq; i++)
     yq[i] += ybuf[i];
   
@@ -562,7 +565,7 @@ void ContModel::recon(const void *model)
 
   compute_inverse_semiseparable_plus_diag(cont_recon.time, cont_recon.size, sigma2, 1.0/tau, 
                                           cont_recon.error, 0.0, u, v, W, D, phi, workspace_uv);
-  multiply_matvec_semiseparable_uv(&pm[4], u, W, D, phi, cont_recon.size, y);
+  multiply_matvec_semiseparable_uv(&pm[num_params_var], u, W, D, phi, cont_recon.size, y);
 
   for(i=0; i<cont_recon.size; i++)
   {

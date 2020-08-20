@@ -421,6 +421,12 @@ RMFFT::RMFFT(Data& cont):DataFFT(cont)
   fftw_execute(pdata);
 }
 
+void RMFFT::set_data(Data & cont)
+{
+  memcpy(data_real, cont.flux, cont.size*sizeof(double));
+  fftw_execute(pdata);
+}
+
 /* convolution with resp, output to conv */
 void RMFFT::convolve(const double *resp, int n, double *conv)
 {

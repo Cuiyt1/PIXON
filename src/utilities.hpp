@@ -124,6 +124,8 @@ class RMFFT:public DataFFT
     RMFFT(Data& cont);
     /* destructor */
     ~RMFFT(){}
+    /* set data using cont */
+    void set_data(Data & cont);
     /* convolution with resp, output to conv */
     void convolve(const double *resp, int n, double *conv);
     

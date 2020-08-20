@@ -39,6 +39,7 @@ class ContModel
     void compute_mean_error();
     void mcmc();
     void recon();
+    void recon(const void *model);
     void get_best_params();
     void set_covar_Umat(double sigma, double tau, double alpha);
 
@@ -48,6 +49,7 @@ class ContModel
     int size_max;
     double mean_error;
     double *workspace;
+    double *workspace_uv;
     double *Larr_data;
     double *USmat;
     double *PEmat1, *PEmat2;

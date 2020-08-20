@@ -74,6 +74,7 @@ class Data
     Data(Data& data);
     /* operator = reload */
     Data& operator = (Data& data);
+    void set_size(int n);
     /* load data from a file */
     void load(const string& fname);
     /* variables */

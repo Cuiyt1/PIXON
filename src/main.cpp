@@ -60,7 +60,7 @@ int main(int argc, char ** argv)
   npixon = 10*pixon_sub_factor/pixon_size_factor;
 
   tau_range = 900.0;
-  npixel = tau_range / (cont.time[1]-cont.time[0]);
+  npixel = tau_range / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
   pimg = new double[npixel];
   switch(pixon_type)
   {
@@ -141,8 +141,6 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pix
   opt0.set_lower_bounds(-100.0);
   opt0.set_upper_bounds(10.0);
   opt0.set_maxeval(10000);
-  //opt0.set_xtol_rel(1e-11);
-  //opt0.set_ftol_rel(1e-11);
   opt0.set_ftol_abs(1.0e-6);
   opt0.set_xtol_abs(1.0e-6);
 
@@ -178,7 +176,6 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pix
     num = pixon.compute_pixon_number();
     
     opt0.optimize(x, f);
-    //opt1.optimize(x, f);
 
     rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,

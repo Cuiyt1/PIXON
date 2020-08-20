@@ -180,6 +180,23 @@ Data& Data::operator = (Data& data)
   return *this;
 }
 
+void Data::set_size(int n)
+{
+  if(size != n)
+  {
+    if(size > 0)
+    {
+      delete[] time;
+      delete[] flux;
+      delete[] error;
+    }
+    size = n;
+    time = new double[size];
+    flux = new double[size];
+    error = new double[size];
+  }
+}
+
 void Data::load(const string& fname)
 {
   ifstream fin;

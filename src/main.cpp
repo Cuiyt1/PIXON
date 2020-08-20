@@ -15,6 +15,7 @@
 #include <fftw3.h>
 
 #include "utilities.hpp"
+#include "cont_model.hpp"
 #include "tnc.h"
 
 using namespace std;
@@ -42,6 +43,11 @@ int main(int argc, char ** argv)
   cont.load(fcon);
   fline = "data/line.txt";
   line.load(fline);
+
+  cont_model = new ContModel(cont);
+  cont_model->mcmc();
+  cont_model->get_best_params();
+  cont_model->recon();
 
   int npixel;
   int npixon;
@@ -105,9 +111,9 @@ int main(int argc, char ** argv)
       break;
   }
 
-  run_uniform(cont, line, pimg, npixel, npixon, pixon_type);
+  run_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
   npixon = fmax(10, fmin(npixon*2, 40*pixon_sub_factor));
-  run(cont, line, pimg, npixel, npixon, pixon_type);
+  run(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
   delete[] pimg;
 
   return 0;

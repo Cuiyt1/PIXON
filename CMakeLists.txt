@@ -23,4 +23,16 @@ find_path(FFTW3_INCLUDE_DIR fftw3.h)
 find_library(FFTW3_LIB fftw3)
 include_directories(${FFTW3_INCLUDE_DIR})
 
-target_link_libraries(pixon utilities ${NLOPT_LIB} ${FFTW3_LIB})
+find_path(LAPACKE_INCLUDE_DIR NAMES lapacke.h PATHS /usr/include/lapacke)
+find_library(LAPACKE_LIB lapacke)
+include_directories(${LAPACKE_INCLUDE_DIR})
+
+find_path(CBLAS_INCLUDE_DIR NAMES cblas.h PATHS /usr/include/cblas)
+find_library(CBLAS_LIB cblas)
+include_directories(${CBLAS_INCLUDE_DIR})
+
+find_path(CDNEST_INCLUDE_DIR NAMES dnestvars.h PATHS /home/liyropt/Projects/GIT/CDNestSingle)
+find_library(CDNEST_LIB NAMES dnest PATHS /home/liyropt/Projects/GIT/CDNestSingle)
+include_directories(${CDNEST_INCLUDE_DIR})
+
+target_link_libraries(pixon utilities cont_model ${NLOPT_LIB} ${FFTW3_LIB} ${LAPACKE_LIB} ${CBLAS_LIB} ${CDNEST_LIB})

@@ -23,6 +23,8 @@
 
 using namespace std;
 
+enum PRIOR_TYPE {GAUSSIAN=1, UNIFORM=2};
+
 extern int pixon_size_factor;
 extern int pixon_sub_factor;
 extern int pixon_map_low_bound;

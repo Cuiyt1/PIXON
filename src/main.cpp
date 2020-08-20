@@ -130,30 +130,31 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pix
   
   /* TNC */
   int rc, maxCGit = npixel, maxnfeval = 10000, nfeval, niter;
-  double low[npixel], up[npixel], eta = -1.0, stepmx = -1.0,
-    accuracy =  1.0e-6, fmin = pixon.line.size, ftol = 1.0e-6, xtol = 1.0e-6, pgtol = 1.0e-6,
-    rescale = -1.0;
+  double eta = -1.0, stepmx = -1.0, accuracy =  1.0e-6, fmin = pixon.line.size, 
+    ftol = 1.0e-6, xtol = 1.0e-6, pgtol = 1.0e-6, rescale = -1.0;
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, npixel);
   vector<double> x(npixel), g(npixel), x_old(npixel);
-  opt0.set_min_objective(func_nlopt, args);
-  opt0.set_lower_bounds(-100.0);
-  opt0.set_upper_bounds(10.0);
-  opt0.set_maxeval(10000);
-  opt0.set_ftol_abs(1.0e-6);
-  opt0.set_xtol_abs(1.0e-6);
+  vector<double>low(npixel), up(npixel);
 
+  /* bounds and initial values */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =  10.0;
-    //x[i] = log(1.0/(npixel * pixon.dt));
     x[i] = pimg[i];
   }
+
+  opt0.set_min_objective(func_nlopt, args);
+  opt0.set_lower_bounds(low);
+  opt0.set_upper_bounds(up);
+  opt0.set_maxeval(10000);
+  opt0.set_ftol_abs(1.0e-6);
+  opt0.set_xtol_abs(1.0e-6);
   
   opt0.optimize(x, f);
-  rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+  rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
   
@@ -176,8 +177,7 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pix
     num = pixon.compute_pixon_number();
     
     opt0.optimize(x, f);
-
-    rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+    rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -256,35 +256,34 @@ void run_uniform(Data & cont, Data& line, double *pimg, int npixel, int& npixon,
   double f, f_old, num_old, num, df, dnum, chisq, chisq_old;
   double *image=new double[npixel], *itline=new double[pixon.line.size];
  
+  /* TNC */
   int rc, maxCGit = npixel, maxnfeval = 10000, nfeval, niter;
-  double low[npixel], up[npixel],
-    eta = -1.0, stepmx = -1.0,
-    accuracy = 1.0e-5, fmin = pixon.line.size, ftol = 1.0e-5, xtol = 1.0e-5, pgtol = 1.0e-5,
-    rescale = -1.0;
+  double eta = -1.0, stepmx = -1.0, accuracy = 1.0e-6, fmin = pixon.line.size, 
+    ftol = 1.0e-6, xtol = 1.0e-6, pgtol = 1.0e-6, rescale = -1.0;
 
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, npixel);
   vector<double> x(npixel), g(npixel), x_old(npixel);
-  opt0.set_min_objective(func_nlopt, args);
-  opt0.set_lower_bounds(-100.0);
-  opt0.set_upper_bounds(10.0);
-  opt0.set_maxeval(10000);
-  //opt0.set_xtol_rel(1e-11);
-  //opt0.set_ftol_rel(1e-11);
-  opt0.set_ftol_abs(1.0e-5);
-  opt0.set_xtol_abs(1.0e-5);
-   
+  vector<double> low(npixel), up(npixel);
+  
+  /* bounds and initial values */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
-    //x[i] = log(1.0/sqrt(2.0*M_PI)/10.0 * exp( - 0.5*pow((pixon.dt*i - 300.0)/10.0, 2.0) ) + 1.0e-10);
   }
 
+  /* NLopt settings */
+  opt0.set_min_objective(func_nlopt, args);
+  opt0.set_lower_bounds(low);
+  opt0.set_upper_bounds(up);
+  opt0.set_maxeval(10000);
+  opt0.set_ftol_abs(1.0e-6);
+  opt0.set_xtol_abs(1.0e-6);
+   
   opt0.optimize(x, f);
-
-  rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+  rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
   
@@ -306,8 +305,7 @@ void run_uniform(Data & cont, Data& line, double *pimg, int npixel, int& npixon,
     num = pixon.compute_pixon_number();
     
     opt0.optimize(x, f);
-
-    rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low, up, NULL, NULL, TNC_MSG_ALL,
+    rc = tnc(npixel, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     

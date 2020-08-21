@@ -13,8 +13,10 @@ include_directories(${CBLAS_INCLUDE_DIR})
 
 add_library(utilities 
    SHARED 
+   proto.hpp
    utilities.hpp
    utilities.cpp 
+   test.cpp
    tnc.h
    tnc.c
    mathfun.h 

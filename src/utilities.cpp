@@ -14,8 +14,6 @@
 
 #include "utilities.hpp"
 
-#define EPS (1.0e-50)
-
 int pixon_size_factor;
 int pixon_sub_factor;
 int pixon_map_low_bound;
@@ -427,6 +425,12 @@ void RMFFT::set_data(Data & cont)
   fftw_execute(pdata);
 }
 
+void RMFFT::set_data(double * cont, int n)
+{
+  memcpy(data_real, cont, n*sizeof(double));
+  fftw_execute(pdata);
+}
+
 /* convolution with resp, output to conv */
 void RMFFT::convolve(const double *resp, int n, double *conv)
 {
@@ -665,16 +669,16 @@ void Pixon::compute_rm_pixon(const double *x)
     pseudo_image[i] = exp(x[i]);
   }
   pfft.convolve(pseudo_image, pixon_map, image);
-
-  /* reverberation mapping */
-  rmfft.convolve(image, npixel, rmline);
-
+  
   /* enforce positive image */
   for(i=0; i<npixel; i++)
   {
     if(image[i] <= 0.0)
       image[i] = EPS;
   }
+  
+  /* reverberation mapping */
+  rmfft.convolve(image, npixel, rmline);
 
   /* interpolation */
   for(i=0; i<line.size; i++)

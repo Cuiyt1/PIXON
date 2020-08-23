@@ -21,6 +21,8 @@
 
 #include "tnc.h"
 
+#define EPS (1.0e-50)
+
 using namespace std;
 
 enum PRIOR_TYPE {GAUSSIAN=1, UNIFORM=2};
@@ -125,7 +127,9 @@ class RMFFT:public DataFFT
     /* destructor */
     ~RMFFT(){}
     /* set data using cont */
-    void set_data(Data & cont);
+    void set_data(Data& cont);
+    /* set data using array */
+    void set_data(double *cont, int n);
     /* convolution with resp, output to conv */
     void convolve(const double *resp, int n, double *conv);
     

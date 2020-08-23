@@ -550,7 +550,6 @@ Pixon::Pixon()
 {
   npixel = 0;
   pixon_map = NULL; 
-  pixon_map_smooth = NULL;
   pixon_map_updated = NULL;
   image = pseudo_image = NULL;
   rmline = NULL;
@@ -569,7 +568,6 @@ Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in)
   :cont(cont_in), line(line_in), rmfft(cont_in), pfft(npixel_in, npixon_in), npixel(npixel_in)
 {
   pixon_map = new int[npixel];
-  pixon_map_smooth = new int[npixel];
   pixon_map_updated = new bool[npixel];
   image = new double[npixel];
   pseudo_image = new double[npixel];
@@ -599,7 +597,6 @@ Pixon::~Pixon()
   {
     npixel = 0;
     delete[] pixon_map;
-    delete[] pixon_map_smooth;
     delete[] pixon_map_updated;
     delete[] image;
     delete[] pseudo_image;
@@ -1013,10 +1010,6 @@ bool Pixon::update_pixon_map()
       }
     }
   }
-  if(flag == true)
-  {
-    //flag = smooth_pixon_map();
-  }
   return flag;
 }
 
@@ -1045,38 +1038,7 @@ bool Pixon::increase_pixon_map()
       }
     }
   }
-  if(flag == true)
-  {
-    flag = smooth_pixon_map();
-  }
   return flag;
-}
-
-bool Pixon::smooth_pixon_map()
-{
-  int i, id;
-  int *ptr;
-
-  pixon_map_smooth[0] = pixon_map[0];
-  pixon_map_smooth[npixel-1] = pixon_map[npixel-1];
-
-  for(i=1; i<npixel-1; i++)
-  {
-    pixon_map_smooth[i] = (0.05*pixon_map[i-1] + pixon_map[i] + 0.05*pixon_map[i+1])/1.1;
-    
-    id = pixon_map_smooth[i] - pixon_map[i];
-    if(id != 0)
-    {
-      pfft.pixon_sizes_num[pixon_map[i]]--;
-      pfft.pixon_sizes_num[pixon_map_smooth[i]]++;
-    }
-  }
-  
-  ptr = pixon_map;
-  pixon_map = pixon_map_smooth;
-  pixon_map_smooth = ptr;
-
-  return true;
 }
 /*==================================================================*/
 /* pixon functions */

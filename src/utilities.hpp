@@ -182,7 +182,6 @@ class Pixon
     void increase_pixon_map(int);
     bool update_pixon_map();
     bool increase_pixon_map();
-    bool smooth_pixon_map();
 
     Data cont, line;
     RMFFT rmfft;
@@ -190,7 +189,6 @@ class Pixon
 
     int npixel;   /* number of pixels */
     int *pixon_map;   /* pixon map */
-    int *pixon_map_smooth;  /* intermediate array for smoothing pixon map */
     bool *pixon_map_updated;  /* pixons updated */
     double *image;           /* image */
     double *pseudo_image;    /* pseudo image */

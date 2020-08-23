@@ -39,11 +39,13 @@ int main(int argc, char ** argv)
   fline = "data/line.txt";
   line.load(fline);
 
-  cont_model = new ContModel(cont);
+  /* continuum reconstruction */
+  double tback = 900.0, tforward = 500.0;
+  cont_model = new ContModel(cont, tback, tforward);
   cont_model->mcmc();
   cont_model->get_best_params();
   cont_model->recon();
-
+  
   int npixel;
   int npixon;
   double tau_range;
@@ -54,7 +56,7 @@ int main(int argc, char ** argv)
   pixon_map_low_bound = pixon_sub_factor - 1;
   npixon = 10*pixon_sub_factor/pixon_size_factor;
 
-  tau_range = 900.0;
+  tau_range = tback;
   npixel = tau_range / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
   pimg = new double[npixel];
   switch(pixon_type)

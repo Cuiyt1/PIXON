@@ -172,7 +172,7 @@ ContModel::ContModel()
   PEmat1 = NULL;
   PEmat2 = NULL;
 }
-ContModel::ContModel(Data& cont_in)
+ContModel::ContModel(Data& cont_in, double tback, double tforward)
   :cont(cont_in)
 {
   int i;
@@ -182,7 +182,6 @@ ContModel::ContModel(Data& cont_in)
   /* continuum reconstruction */
   int n;
   double dt = (cont.time[cont.size-1] - cont.time[0])/(cont.size-1);
-  double tback = 1000.0, tforward = 500.0;
 
   dt = fmax(dt, 1.0);
   n = (cont.time[cont.size - 1] + tforward - (cont.time[0] - tback))/dt;

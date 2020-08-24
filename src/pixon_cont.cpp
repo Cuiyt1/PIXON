@@ -162,7 +162,7 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
   {
     jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-1);
     jrange2 = fmin(cont_data.size-1, i + pixon_size_factor * psize);
-    
+
     grad_in = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
@@ -189,7 +189,7 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
 void PixonCont::compute_mem_grad_cont(const double *x)
 {
   double Itot, num, alpha, grad_in, psize, K;
-  int i, j;
+  int i, j, jrange1, jrange2;
   Itot = 0.0;
   for(i=0; i<cont.size; i++)
   {
@@ -202,8 +202,10 @@ void PixonCont::compute_mem_grad_cont(const double *x)
   psize = pfft_cont.pixon_sizes[pixon_map_cont[0]];
   for(i=0; i<cont.size; i++)
   {       
+    jrange1 = fmax(0, i - pixon_size_factor * psize);
+    jrange2 = fmin(cont.size-1, i + pixon_size_factor*psize);
     grad_in = 0.0;
-    for(j=0; j<cont.size; j++)
+    for(j=jrange1; j<=jrange2; j++)
     {
       K = pixon_function(j, i, psize);
       grad_in += (1.0 + log(image_cont[j]/Itot)) * K;

@@ -175,14 +175,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 
     pixon.reduce_pixon_map_cont();
     num = pixon.compute_pixon_number_cont();
-    
-    for(i=0; i<cont_recon.size; i++)
-    {
-      if(x[i] >= up[i] )
-        x[i] = up[i];
-      if(x[i] <= low[i])
-        x[i] = low[i];
-    }
 
     opt0.optimize(x, f);
     rc = tnc(cont_recon.size, x.data(), &f, g.data(), func_tnc_cont, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,

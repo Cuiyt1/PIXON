@@ -152,7 +152,7 @@ double PixonCont::compute_pixon_number_cont()
 
 void PixonCont::compute_chisquare_grad_cont(const double *x)
 {
-  int i, j, jt;
+  int i, j, jt, jrange1, jrange2;
   double tj;
   double psize, grad_in, K, jt_real;
   
@@ -160,8 +160,11 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
   psize = pfft_cont.pixon_sizes[pixon_map_cont[0]];
   for(i=0; i<cont.size; i++)
   {
+    jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-1);
+    jrange2 = fmin(cont_data.size-1, i + pixon_size_factor * psize);
+    
     grad_in = 0.0;
-    for(j=0; j<cont_data.size; j++)
+    for(j=jrange1; j<=jrange2; j++)
     {
       tj = cont_data.time[j];
       jt_real = (tj - cont.time[0])/dt;

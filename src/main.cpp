@@ -17,6 +17,7 @@
 #include "proto.hpp"
 #include "utilities.hpp"
 #include "cont_model.hpp"
+#include "pixon_cont.hpp"
 #include "tnc.h"
 
 using namespace std;
@@ -107,6 +108,9 @@ int main(int argc, char ** argv)
       pixon_norm = PixonBasis::gaussian_norm;
       break;
   }
+  
+  run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
+  return 0;
 
   run_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
   npixon = fmax(10, fmin(npixon*2, 40*pixon_sub_factor));
@@ -116,7 +120,117 @@ int main(int argc, char ** argv)
   return 0;
 }
 
-void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
+/* set continuum free and use pixons to model continuum */
+void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
+{
+  int i, iter;
+  int npixon_cont = 10;
+  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont);
+  void *args = (void *)&pixon;
+  double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
+  double *image=new double[cont_recon.size];
+
+  /* TNC */
+  int rc, maxCGit = cont_recon.size, maxnfeval = 10000, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  1.0e-5, fmin = pixon.cont_data.size, 
+    ftol = 1.0e-5, xtol = 1.0e-5, pgtol = 1.0e-5, rescale = -1.0;
+  
+  /* NLopt */
+  nlopt::opt opt0(nlopt::LN_BOBYQA, cont_recon.size);
+  vector<double> x(cont_recon.size), g(cont_recon.size), x_old(cont_recon.size);
+  vector<double> low(cont_recon.size), up(cont_recon.size);
+
+  /* bounds and initial values */
+  for(i=0; i<cont_recon.size; i++)
+  {
+    low[i] = fmax(0.0, cont_recon.flux[i] - 3.0 * cont_recon.error[i]);
+    up[i] =  cont_recon.flux[i] + 3.0 * cont_recon.error[i];
+    x[i] = cont_recon.flux[i];
+  }
+  
+  opt0.set_min_objective(func_nlopt_cont, args);
+  opt0.set_lower_bounds(low);
+  opt0.set_upper_bounds(up);
+  opt0.set_maxeval(1000);
+  opt0.set_ftol_abs(1.0e-5);
+  opt0.set_xtol_abs(1.0e-5);
+  
+  opt0.optimize(x, f);
+  rc = tnc(cont_recon.size, x.data(), &f, g.data(), func_tnc_cont, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+  
+  f_old = f;
+  num_old = pixon.compute_pixon_number_cont();
+  pixon.compute_cont(x.data());
+  chisq_old = pixon.compute_chisquare_cont(x.data());
+  memcpy(image, pixon.image_cont, cont_recon.size*sizeof(double));
+  memcpy(x_old.data(), x.data(), cont_recon.size*sizeof(double));
+  cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
+ 
+  while(npixon_cont>pixon_map_low_bound+1)
+  {
+    npixon_cont--;
+    cout<<"npixon_cont:"<<npixon_cont<<",  size: "<<pixon.pfft_cont.pixon_sizes[npixon_cont]<<endl;
+
+    pixon.reduce_pixon_map_cont();
+    num = pixon.compute_pixon_number_cont();
+    
+    for(i=0; i<cont_recon.size; i++)
+    {
+      if(x[i] >= up[i] )
+        x[i] = up[i];
+      if(x[i] <= low[i])
+        x[i] = low[i];
+    }
+
+    opt0.optimize(x, f);
+    rc = tnc(cont_recon.size, x.data(), &f, g.data(), func_tnc_cont, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+    
+    if(rc <0 || rc > 3)
+    {
+      opt0.optimize(x, f);
+    }
+    
+    pixon.compute_cont(x.data());
+    chisq = pixon.compute_chisquare_cont(x.data());
+    cout<<f<<"  "<<num<<"  "<<chisq<<endl;
+
+    if(f <= pixon.cont_data.size)
+    {
+      memcpy(image, pixon.image_cont, cont_recon.size*sizeof(double));
+      memcpy(x_old.data(), x.data(), cont_recon.size*sizeof(double));
+      break;
+    }
+    
+    df = f-f_old;
+    dnum = num - num_old;
+
+    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+      break;
+
+    num_old = num;
+    f_old = f;
+    chisq_old = chisq;
+    memcpy(image, pixon.image_cont, cont_recon.size*sizeof(double));
+    memcpy(x_old.data(), x.data(), cont_recon.size*sizeof(double));
+  }
+  
+  ofstream fp;
+  fp.open("data/con_pixon.txt");
+  for(i=0; i<cont_recon.size; i++)
+  {
+    fp<<pixon.cont.time[i]<<" "<<image[i]<<endl;
+  }
+  fp.close();
+
+  delete[] image;
+}
+
+/* set continuum fixed from a drw reconstruction and use pixel dependent pixon sizes */
+void run(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
   int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
@@ -245,7 +359,8 @@ void run(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pix
 
 }
 
-void run_uniform(Data & cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
+/* set continuum fixed from a drw reconstruction and use uniform pixon sizes */
+void run_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
   int i;
   Pixon pixon(cont, line, npixel, npixon);

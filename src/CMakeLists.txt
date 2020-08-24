@@ -16,6 +16,8 @@ add_library(utilities
    proto.hpp
    utilities.hpp
    utilities.cpp 
+   pixon_cont.hpp 
+   pixon_cont.cpp
    test.cpp
    tnc.h
    tnc.c

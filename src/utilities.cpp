@@ -249,6 +249,12 @@ void Data::load(const string& fname)
   }
   fin.close();
 }
+
+void Data::set_data(double *data)
+{
+  memcpy(flux, data, size*sizeof(double));
+}
+
 /*==================================================================*/
 /* class DataFFT */
 DataFFT::DataFFT()
@@ -425,9 +431,9 @@ void RMFFT::set_data(Data & cont)
   fftw_execute(pdata);
 }
 
-void RMFFT::set_data(double * cont, int n)
+void RMFFT::set_data(double *data, int n)
 {
-  memcpy(data_real, cont, n*sizeof(double));
+  memcpy(data_real, data, n*sizeof(double));
   fftw_execute(pdata);
 }
 
@@ -479,7 +485,7 @@ PixonFFT::~PixonFFT()
 void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
 {
   int ip, j;
-  double psize;
+  double psize, norm;
   double *conv_tmp = new double[nd];
 
   /* fft of pseudo image */
@@ -493,13 +499,16 @@ void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
     {
       psize = pixon_sizes[ip];
       /* setup resp */
+      norm = 0.0;
       for(j=0; j<nd_fft/2; j++)
       {
         resp_real[j] = pixon_function(j, 0, psize);
+        norm += resp_real[j];
       }
       for(j=nd_fft-1; j>=nd_fft/2; j--)
       {
         resp_real[j] = pixon_function(j, nd_fft, psize);
+        norm += resp_real[j];
       }
       fftw_execute(presp);
       
@@ -507,7 +516,7 @@ void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
       for(j=0; j<nd; j++)
       {
         if(pixon_map[j] == ip)
-          conv[j] = conv_tmp[j];
+          conv[j] = conv_tmp[j] / norm;
       }
     }
   }

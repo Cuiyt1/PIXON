@@ -79,6 +79,7 @@ class Data
     void set_size(int n);
     /* load data from a file */
     void load(const string& fname);
+    void set_data(double *data);
     /* variables */
     int size;
     double *time, *flux, *error;

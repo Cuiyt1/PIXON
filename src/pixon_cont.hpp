@@ -15,15 +15,18 @@ class PixonCont:public Pixon
     void compute_rm_pixon(const double *x);
     double compute_chisquare(const double *x);
     double compute_chisquare_cont(const double *x);
+    void compute_chisquare_grad(const double *x);
     void compute_chisquare_grad_cont(const double *x);
     double compute_mem(const double *x);
     double compute_mem_cont(const double *x);
+    void compute_mem_grad(const double *x);
     void compute_mem_grad_cont(const double *x);
     double compute_pixon_number_cont();
     void reduce_pixon_map_cont();
 
     Data cont_data;  /* continuum data */
     PixonFFT pfft_cont; /* for continuum */
+    RMFFT rmfft_pixon;
     
     double chisq_cont, mem_cont;
 
@@ -39,4 +42,7 @@ class PixonCont:public Pixon
 
 double func_nlopt_cont(const vector<double> &x, vector<double> &grad, void *f_data);
 int func_tnc_cont(double x[], double *f, double g[], void *state);
+
+double func_nlopt_cont_rm(const vector<double> &x, vector<double> &grad, void *f_data);
+int func_tnc_cont_rm(double x[], double *f, double g[], void *state);
 #endif

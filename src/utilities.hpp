@@ -123,7 +123,8 @@ class RMFFT:public DataFFT
     /* default constructor */
     RMFFT(){}
     /* constructor */
-    RMFFT(int n, double *cont, double norm);
+    RMFFT(int n, double dx);
+    RMFFT(int n, double *cont, double dx);
     RMFFT(Data& cont);
     /* destructor */
     ~RMFFT(){}

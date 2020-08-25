@@ -16,7 +16,8 @@ PixonCont::PixonCont(
   )
   :Pixon(cont_in, line_data_in, npixel_in, npixon_in),
    cont_data(cont_data_in),
-   pfft_cont(cont_in.size, npixon_cont_in)
+   pfft_cont(cont_in.size, npixon_cont_in),
+   rmfft_pixon(cont_in.size, dt)
 {
   residual_cont = new double[cont_data_in.size];
   pixon_map_cont = new int[cont_in.size];
@@ -101,14 +102,14 @@ double PixonCont::compute_chisquare_cont(const double *x)
 double PixonCont::compute_chisquare(const double *x)
 {
   /* calculate chi square */
-  chisq = Pixon::compute_chisquare(x) + compute_chisquare_cont(x);
+  chisq = Pixon::compute_chisquare(x) + compute_chisquare_cont(x + npixel);
   
   return chisq;
 }
 
 double PixonCont::compute_mem(const double *x)
 {
-  mem =  Pixon::compute_mem(x) + compute_mem_cont(x);
+  mem =  Pixon::compute_mem(x) + compute_mem_cont(x + npixel);
   return mem;
 }
 
@@ -122,7 +123,7 @@ double PixonCont::compute_mem_cont(const double *x)
   {
     Itot += image_cont[i];
   }
-  
+
   num = compute_pixon_number_cont();
   alpha = log(num)/log(cont.size);
 
@@ -148,6 +149,36 @@ double PixonCont::compute_pixon_number_cont()
     num += pixon_norm(psize);
   }
   return num;
+}
+
+void PixonCont::compute_chisquare_grad(const double *x)
+{
+  Pixon::compute_chisquare_grad(x);       /* derivative of chisq_line with respect to transfer function */
+  compute_chisquare_grad_cont(x+npixel);  /* derivative of chisq_cont with respect to continuum */
+
+  /* derivative of chisq_line with respect to continuum */
+  int i, j;
+  double psize, grad_in, grad_out, K, t;
+  
+  rmfft_pixon.set_data(image, npixel);
+  psize = pfft_cont.pixon_sizes[pixon_map_cont[0]];
+  for(i=0; i<cont.size; i++)
+  {
+    for(j=0; j<cont.size; j++)
+    {
+      resp_pixon[j] = pixon_function(i, j, psize);
+    }
+    rmfft_pixon.convolve(resp_pixon, cont.size, conv_pixon);
+
+    grad_out = 0.0;
+    for(j=0; j<line.size; j++)
+    {
+      t = line.time[j];
+      grad_in = interp_pixon(t);
+      grad_out += grad_in * residual[j]/line.error[j]/line.error[j];
+    }
+    grad_chisq_cont[i] += grad_out * 2.0; /* chisq = chisq_cont + chisq_line */
+  }
 }
 
 void PixonCont::compute_chisquare_grad_cont(const double *x)
@@ -184,6 +215,12 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
     }
     grad_chisq_cont[i] = 2.0 * grad_in;
   }
+}
+
+void PixonCont::compute_mem_grad(const double *x)
+{
+  Pixon::compute_mem_grad(x);
+  compute_mem_grad_cont(x+npixel);
 }
 
 void PixonCont::compute_mem_grad_cont(const double *x)
@@ -268,6 +305,57 @@ int func_tnc_cont(double x[], double *f, double g[], void *state)
 
   for(i=0; i<pixon->cont.size; i++)
     g[i] = pixon->grad_chisq_cont[i] + pixon->grad_mem_cont[i];
+
+  return 0;
+}
+
+/* function for nlopt */
+double func_nlopt_cont_rm(const vector<double> &x, vector<double> &grad, void *f_data)
+{
+  PixonCont *pixon = (PixonCont *)f_data;
+  double chisq, mem;
+
+  pixon->compute_rm_pixon(x.data());
+  if (!grad.empty()) 
+  {
+    int i;
+    
+    pixon->compute_chisquare_grad(x.data());
+    pixon->compute_mem_grad(x.data());
+    
+    for(i=0; i<pixon->npixel; i++)
+      grad[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
+
+    for(i=pixon->npixel; i<(int)grad.size(); i++)
+      grad[i] = pixon->grad_chisq_cont[i-pixon->npixel] + pixon->grad_mem_cont[i-pixon->npixel];
+  }
+  chisq = pixon->compute_chisquare(x.data());
+  mem = pixon->compute_mem(x.data());
+  return chisq + mem;
+}
+
+
+/* function for tnc */
+int func_tnc_cont_rm(double x[], double *f, double g[], void *state)
+{
+  PixonCont *pixon = (PixonCont *)state;
+  int i;
+  double chisq, mem;
+
+  pixon->compute_rm_pixon(x);
+  pixon->compute_chisquare_grad(x);
+  pixon->compute_mem_grad(x);
+  
+  chisq = pixon->compute_chisquare(x);
+  mem = pixon->compute_mem(x);
+
+  *f = chisq + mem;
+
+  for(i=0; i<pixon->npixel; i++)
+    g[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
+
+  for(i=pixon->npixel; i<pixon->cont.size + pixon->npixel; i++)
+    g[i] = pixon->grad_chisq_cont[i - pixon->npixel] + pixon->grad_mem_cont[i - pixon->npixel];
 
   return 0;
 }

@@ -411,8 +411,13 @@ void DataFFT::convolve_simple(double *conv)
 }
 /*==================================================================*/
 /* class RMFFT */
-RMFFT::RMFFT(int n, double *cont, double norm)
-      :DataFFT(n, norm)
+RMFFT::RMFFT(int n, double dx)
+      :DataFFT(n, dx)
+{
+}
+
+RMFFT::RMFFT(int n, double *cont, double dx)
+      :DataFFT(n, dx)
 {
   /* fft of cont setup only once */
   memcpy(data_real, cont, nd*sizeof(double));
@@ -593,7 +598,7 @@ Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in)
   grad_mem = new double[npixel];
   grad_mem_pixon_low = new double[npixel];
   grad_mem_pixon_up = new double[npixel];
-  resp_pixon = new double[npixel];
+  resp_pixon = new double[cont.size];
   conv_pixon = new double[cont.size];
 
   dt = cont.time[1]-cont.time[0];  /* time interval width of continuum light curve */

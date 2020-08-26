@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
   line.load(fline);
 
   /* continuum reconstruction */
-  double tback = 900.0, tforward = 100.0;
+  double tback = 10.0, tforward = 10.0;
   cont_model = new ContModel(cont, tback, tforward);
   cont_model->mcmc();
   cont_model->get_best_params();
@@ -55,9 +55,9 @@ int main(int argc, char ** argv)
   pixon_sub_factor = 1;
   pixon_size_factor = 1;
   pixon_map_low_bound = pixon_sub_factor - 1;
-  npixon = 20*pixon_sub_factor/pixon_size_factor;
+  npixon = 30*pixon_sub_factor/pixon_size_factor;
 
-  tau_range = tback;
+  tau_range = fmin(line.time[0] - (cont.time[0] - tback), (cont.time[cont.size-1] - cont.time[0])/2.0);
   npixel = tau_range / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
   pimg = new double[npixel];
   switch(pixon_type)
@@ -125,7 +125,7 @@ int main(int argc, char ** argv)
 void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
   int i, iter;
-  int npixon_cont = 10;
+  int npixon_cont = 20;
   PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
@@ -347,7 +347,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
-    fout<<pixon.line.time[i]<<"  "<<itline[i]<<"   "<<itline[i] - line.flux[i]<<endl;
+    fout<<pixon.line.time[i]<<"  "<<itline[i]*pixon.line.norm<<"   "<<itline[i] - line.flux[i]<<endl;
   }
   fout.close();
 
@@ -484,7 +484,7 @@ void run(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixo
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
-    fout<<pixon.line.time[i]<<"  "<<itline[i]<<"   "<<itline[i] - line.flux[i]<<endl;
+    fout<<pixon.line.time[i]<<"  "<<itline[i]*pixon.line.norm<<"   "<<itline[i] - line.flux[i]<<endl;
   }
   fout.close();
 
@@ -616,7 +616,7 @@ void run_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, 
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
-    fout<<pixon.line.time[i]<<"  "<<itline[i]<<"   "<<itline[i] - line.flux[i]<<endl;
+    fout<<pixon.line.time[i]<<"  "<<itline[i]*pixon.line.norm<<"   "<<itline[i] - line.flux[i]<<endl;
   }
   fout.close();
   

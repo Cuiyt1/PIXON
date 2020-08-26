@@ -183,7 +183,7 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
   psize = pfft_cont.pixon_sizes[ipixon_cont];
   for(i=0; i<cont.size; i++)
   {
-    jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-1);
+    jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-2);
     jrange2 = fmin(cont_data.size-2, i + pixon_size_factor * psize);
 
     grad_in = 0.0;
@@ -193,17 +193,10 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
       jt_real = (tj - cont.time[0])/dt;
       jt = (int)jt_real;
       
-      if( fabs( jt - i )  <= pixon_size_factor * psize )
-      {
-        K = pixon_function(i, jt, psize) * (1.0 - (jt_real - jt));
-        grad_in += K * residual_cont[j]/cont_data.error[j]/cont_data.error[j];
-      }
-      
-      if( fabs( jt+1 - i )  <= pixon_size_factor * psize )
-      {
-        K = pixon_function(i, jt+1, psize) * (jt_real - jt);
-        grad_in += K * residual_cont[j]/cont_data.error[j]/cont_data.error[j];
-      }
+      K  = pixon_function(i, jt, psize) * (1.0 - (jt_real - jt));
+          +pixon_function(i, jt+1, psize) * (jt_real - jt);
+ 
+      grad_in += K * residual_cont[j]/cont_data.error[j]/cont_data.error[j];
     }
     grad_chisq_cont[i] = 2.0 * grad_in;
   }

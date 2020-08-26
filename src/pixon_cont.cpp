@@ -166,7 +166,7 @@ void PixonCont::compute_chisquare_grad(const double *x)
   {
     for(j=0; j<cont.size; j++)
     {
-      resp_pixon[j] = pixon_function(i, j, psize);
+      resp_pixon[j] = pixon_function(j, i, psize);
     }
     rmfft_pixon.convolve(resp_pixon, cont.size, conv_pixon);
 
@@ -192,7 +192,7 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
   for(i=0; i<cont.size; i++)
   {
     jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-1);
-    jrange2 = fmin(cont_data.size-1, i + pixon_size_factor * psize);
+    jrange2 = fmin(cont_data.size-2, i + pixon_size_factor * psize);
 
     grad_in = 0.0;
     for(j=jrange1; j<=jrange2; j++)

@@ -225,7 +225,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   fp.open("data/con_pixon.txt");
   for(i=0; i<cont_recon.size; i++)
   {
-    fp<<pixon.cont.time[i]<<" "<<image_cont[i]<<endl;
+    fp<<pixon.cont.time[i]<<" "<<image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
   
@@ -354,7 +354,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   fp.open("data/con_pixon_rm.txt");
   for(i=0; i<pixon.cont.size; i++)
   {
-    fp<<pixon.cont.time[i]<<" "<<image[i+npixel]<<endl;
+    fp<<pixon.cont.time[i]<<" "<<image[i+npixel]*pixon.cont.norm<<endl;
   }
   fp.close();
 

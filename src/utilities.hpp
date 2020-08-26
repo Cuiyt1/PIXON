@@ -80,8 +80,11 @@ class Data
     /* load data from a file */
     void load(const string& fname);
     void set_data(double *data);
+    void set_norm(double norm_in);
+    void normalize();
     /* variables */
     int size;
+    double norm;
     double *time, *flux, *error;
 };
 

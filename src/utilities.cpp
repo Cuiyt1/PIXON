@@ -110,6 +110,7 @@ Data::Data()
 {
   size = 0;
   time = flux = error = NULL;
+  norm = 1.0;
 }
 
 /* constructor with a size of n */
@@ -121,6 +122,7 @@ Data::Data(int n)
     time = new double[size];
     flux = new double[size];
     error = new double[size];
+    norm = 1.0;
   }
   else
   {
@@ -149,6 +151,8 @@ Data::Data(Data& data)
   memcpy(time, data.time, size*sizeof(double));
   memcpy(flux, data.flux, size*sizeof(double));
   memcpy(error, data.error, size*sizeof(double));
+
+  norm = data.norm;
 }
 
 Data& Data::operator = (Data& data)
@@ -168,12 +172,16 @@ Data& Data::operator = (Data& data)
     memcpy(time, data.time, size*sizeof(double));
     memcpy(flux, data.flux, size*sizeof(double));
     memcpy(error, data.error, size*sizeof(double));
+
+    norm = data.norm;
   }
   else 
   {
     memcpy(time, data.time, size*sizeof(double));
     memcpy(flux, data.flux, size*sizeof(double));
     memcpy(error, data.error, size*sizeof(double));
+
+    norm = data.norm;
   }
   return *this;
 }
@@ -192,6 +200,8 @@ void Data::set_size(int n)
     time = new double[size];
     flux = new double[size];
     error = new double[size];
+
+    norm = 1.0;
   }
 }
 
@@ -248,11 +258,34 @@ void Data::load(const string& fname)
     }
   }
   fin.close();
+
+  normalize();
 }
 
 void Data::set_data(double *data)
 {
   memcpy(flux, data, size*sizeof(double));
+}
+
+void Data::set_norm(double norm_in)
+{
+  norm = norm_in;
+}
+
+void Data::normalize()
+{
+  int i;
+  norm = 0.0;
+  for(i=0; i<size; i++)
+  {
+    norm += flux[i];
+  }
+  norm /= size;
+  for(i=0; i<size; i++)
+  {
+    flux[i] /= norm;
+    error[i] /= norm;
+  }
 }
 
 /*==================================================================*/

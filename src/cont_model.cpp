@@ -187,6 +187,7 @@ ContModel::ContModel(Data& cont_in, double tback, double tforward)
   n = (cont.time[cont.size - 1] + tforward - (cont.time[0] - tback))/dt;
   cout<<"size: "<<n<<endl;
   cont_recon.set_size(n);
+  cont_recon.set_norm(cont_in.norm);
   for(i=0; i<cont_recon.size; i++)
   {
     cont_recon.time[i] = cont.time[0] - tback + dt * i;
@@ -491,7 +492,7 @@ void ContModel::recon()
   fout.open("data/con_recon.txt");
   for(i=0; i<cont_recon.size; i++)
   {
-    fout<<cont_recon.time[i]<<"  "<<cont_recon.flux[i]<<"   "<<cont_recon.error[i]<<endl;
+    fout<<cont_recon.time[i]<<"  "<<cont_recon.flux[i]*cont_recon.norm<<"   "<<cont_recon.error[i]*cont_recon.norm<<endl;
   }
   fout.close();
 }

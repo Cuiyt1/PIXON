@@ -30,8 +30,10 @@ int main(int argc, char ** argv)
     exit(0);
   }
   int pixon_type = atoi(argv[1]);
-
   cout<<"Pixon type: "<<pixon_type<<","<<PixonBasis::pixonbasis_name[pixon_type]<<endl;
+
+  double tau_range;
+  tau_range = 900.0;
 
   Data cont, line;
   string fcon, fline;
@@ -41,7 +43,8 @@ int main(int argc, char ** argv)
   line.load(fline);
 
   /* continuum reconstruction */
-  double tback = 10.0, tforward = 10.0;
+  double tback = fmax(cont.time[0] - (line.time[0] - tau_range), 100.0);
+  double tforward = 100.0;
   cont_model = new ContModel(cont, tback, tforward);
   cont_model->mcmc();
   cont_model->get_best_params();
@@ -49,15 +52,13 @@ int main(int argc, char ** argv)
   
   int npixel;
   int npixon;
-  double tau_range;
   double *pimg;
 
   pixon_sub_factor = 1;
   pixon_size_factor = 1;
   pixon_map_low_bound = pixon_sub_factor - 1;
-  npixon = 30*pixon_sub_factor/pixon_size_factor;
+  npixon = 20*pixon_sub_factor/pixon_size_factor;
 
-  tau_range = fmin(line.time[0] - (cont.time[0] - tback), (cont.time[cont.size-1] - cont.time[0])/2.0);
   npixel = tau_range / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
   pimg = new double[npixel];
   switch(pixon_type)
@@ -109,21 +110,21 @@ int main(int argc, char ** argv)
       break;
   }
   
-  run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
-  //return 0;
-  
-  npixon = fmax(10, fmin(npixon*2, 40*pixon_sub_factor));
-  run_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
-  npixon = fmax(10, fmin(npixon*2, 40*pixon_sub_factor));
-  run(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
+  run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
+  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
+  run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
+  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
+  run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
   delete[] pimg;
 
   return 0;
 }
 
 /* set continuum free and use pixons to model continuum */
-void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
+void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
+  cout<<"************************************************************"<<endl;
+  cout<<"Start run_cont_pixon_uniform..."<<endl;
   int i, iter;
   int npixon_cont = 20;
   PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont);
@@ -252,11 +253,11 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   }
   for(i=0; i<pixon.cont.size; i++)
   {
-    low[i+npixel] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
-    up[i+npixel] =            cont_recon.flux[i] + 5.0 * cont_recon.error[i];
+    low[i+npixel] = fmax(0.0, cont_recon.flux[i] - 3.0 * cont_recon.error[i]);
+    up[i+npixel] =            cont_recon.flux[i] + 3.0 * cont_recon.error[i];
     x[i+npixel] = pixon.cont.flux[i];
   }
-
+  
   opt1.set_min_objective(func_nlopt_cont_rm, args);
   opt1.set_lower_bounds(low);
   opt1.set_upper_bounds(up);
@@ -264,6 +265,14 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   opt1.set_ftol_abs(1.0e-6);
   opt1.set_xtol_abs(1.0e-6);
   
+  for(i=0; i<ndim; i++)
+  {
+    if(x[i] < low[i])
+      x[i] = low[i];
+    if(x[i] > up[i])
+      x[i] = up[i];
+  }
+
   opt1.optimize(x, f);
   rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
@@ -343,7 +352,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   }
   fout.close();
 
-  fname = "data/line_sim_cont.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_cont.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -364,8 +373,10 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 }
 
 /* set continuum fixed from a drw reconstruction and use pixel dependent pixon sizes */
-void run(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
+void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
+  cout<<"************************************************************"<<endl;
+  cout<<"Start run_pixon..."<<endl;
   int i, iter;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
@@ -480,7 +491,7 @@ void run(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixo
   }
   fout.close();
   
-  fname = "data/line_sim.txt_" + to_string(pixon_type);
+  fname = "data/line_rec.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -502,8 +513,10 @@ void run(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixo
 }
 
 /* set continuum fixed from a drw reconstruction and use uniform pixon sizes */
-void run_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
+void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type)
 {
+  cout<<"************************************************************"<<endl;
+  cout<<"Start run_pixon_uniform..."<<endl;
   int i;
   Pixon pixon(cont, line, npixel, npixon);
   void *args = (void *)&pixon;
@@ -612,7 +625,7 @@ void run_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, 
   }
   fout.close();
   
-  fname = "data/line_sim_uniform.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_uniform.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {

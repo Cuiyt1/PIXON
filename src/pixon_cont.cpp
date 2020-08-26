@@ -6,7 +6,6 @@ PixonCont::PixonCont()
 {
   image_cont = pseudo_image_cont = NULL;
   residual_cont = NULL;
-  pixon_map_cont = NULL;
   grad_chisq_cont = NULL;
 }
 
@@ -17,20 +16,14 @@ PixonCont::PixonCont(
   :Pixon(cont_in, line_data_in, npixel_in, npixon_in),
    cont_data(cont_data_in),
    pfft_cont(cont_in.size, npixon_cont_in),
-   rmfft_pixon(cont_in.size, dt)
+   rmfft_pixon(cont_in.size, dt),
+   ipixon_cont(npixon_cont_in-1)
 {
   residual_cont = new double[cont_data_in.size];
-  pixon_map_cont = new int[cont_in.size];
   image_cont = new double[cont_in.size];
   pseudo_image_cont = new double[cont_in.size];
   grad_chisq_cont = new double[cont_in.size];
   grad_mem_cont = new double[cont_in.size];
-
-  int i;
-  for(i=0; i<cont_in.size; i++)
-  {
-    pixon_map_cont[i] = npixon_cont_in-1;  /* set the largest pixon size */
-  }
 }
 
 PixonCont::~PixonCont()
@@ -38,7 +31,6 @@ PixonCont::~PixonCont()
   if(npixel > 0)
   {
     delete[] residual_cont;
-    delete[] pixon_map_cont;
     delete[] image_cont;
     delete[] pseudo_image_cont;
     delete[] grad_chisq_cont;
@@ -55,7 +47,7 @@ void PixonCont::compute_cont(const double *x)
   {
     pseudo_image_cont[i] = x[i];
   }
-  pfft_cont.convolve(pseudo_image_cont, pixon_map_cont, image_cont);
+  pfft_cont.convolve(pseudo_image_cont, ipixon_cont, image_cont);
   
   /* enforce positive image */
   for(i=0; i<cont.size; i++)
@@ -145,7 +137,7 @@ double PixonCont::compute_pixon_number_cont()
   num = 0.0;
   for(i=0; i<cont.size; i++)
   {
-    psize = pfft_cont.pixon_sizes[pixon_map_cont[i]];
+    psize = pfft_cont.pixon_sizes[ipixon_cont];
     num += pixon_norm(psize);
   }
   return num;
@@ -161,7 +153,7 @@ void PixonCont::compute_chisquare_grad(const double *x)
   double psize, grad_in, grad_out, K, t;
   
   rmfft_pixon.set_data(image, npixel);
-  psize = pfft_cont.pixon_sizes[pixon_map_cont[0]];
+  psize = pfft_cont.pixon_sizes[ipixon_cont];
   for(i=0; i<cont.size; i++)
   {
     for(j=0; j<cont.size; j++)
@@ -188,7 +180,7 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
   double psize, grad_in, K, jt_real;
   
   /* uniform pixon size */
-  psize = pfft_cont.pixon_sizes[pixon_map_cont[0]];
+  psize = pfft_cont.pixon_sizes[ipixon_cont];
   for(i=0; i<cont.size; i++)
   {
     jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-1);
@@ -236,7 +228,7 @@ void PixonCont::compute_mem_grad_cont(const double *x)
   alpha = log(num)/log(cont.size);
   
   /* uniform pixon size */
-  psize = pfft_cont.pixon_sizes[pixon_map_cont[0]];
+  psize = pfft_cont.pixon_sizes[ipixon_cont];
   for(i=0; i<cont.size; i++)
   {       
     jrange1 = fmax(0, i - pixon_size_factor * psize);
@@ -252,16 +244,11 @@ void PixonCont::compute_mem_grad_cont(const double *x)
 }
 
 
-void PixonCont::reduce_pixon_map_cont()
+void PixonCont::reduce_ipixon_cont()
 {
   int i;
-  pfft_cont.pixon_sizes_num[pfft_cont.ipixon_min] = 0;
   pfft_cont.reduce_pixon_min();
-  pfft_cont.pixon_sizes_num[pfft_cont.ipixon_min] = cont.size;
-  for(i=0; i<cont.size; i++)
-  {
-    pixon_map_cont[i]--;
-  }
+  ipixon_cont--;
 }
 
 /* function for nlopt */

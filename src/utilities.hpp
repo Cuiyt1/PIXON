@@ -158,6 +158,29 @@ class PixonFFT:public DataFFT
     int ipixon_min; /* minimum pixon index */
     double *pixon_sizes; /* pixon sizes */
     double *pixon_sizes_num; /* number of pixon at each size */
+
+    double *conv_tmp;
+  protected:
+};
+
+/* class to do uniform pixon FFT */
+class PixonUniFFT:public DataFFT
+{
+  public:
+    PixonUniFFT();
+    PixonUniFFT(int npixel, int npixon);
+    ~PixonUniFFT();
+    void convolve(const double *pseudo_img, int ipixon, double *conv);
+    /* reduce the minimum pixon size */
+    void reduce_pixon_min();
+    void increase_pixon_min();
+    int get_ipxion_min();
+
+    friend class Pixon;
+
+    int npixon;  /* total number of pixons */
+    int ipixon_min; /* minimum pixon index */
+    double *pixon_sizes; /* pixon sizes */
   protected:
 };
 

@@ -459,6 +459,7 @@ PixonFFT::PixonFFT()
   npixon = ipixon_min = 0;
   pixon_sizes = NULL;
   pixon_sizes_num = NULL;
+  conv_tmp = NULL;
 }
 PixonFFT::PixonFFT(int npixel_in, int npixon_in)
       :DataFFT(npixel_in, 1.0, npixon_in*pixon_size_factor), npixon(npixon_in)
@@ -468,6 +469,7 @@ PixonFFT::PixonFFT(int npixel_in, int npixon_in)
   ipixon_min = npixon-1;
   pixon_sizes = new double[npixon];
   pixon_sizes_num = new double[npixon];
+  conv_tmp = new double[nd];
   for(i=0; i<npixon; i++)
   {
     pixon_sizes[i] = (i+1)*1.0/pixon_sub_factor;
@@ -484,6 +486,7 @@ PixonFFT::~PixonFFT()
     npixon = 0;
     delete[] pixon_sizes;
     delete[] pixon_sizes_num;
+    delete[] conv_tmp;
   }
 }
 
@@ -491,7 +494,6 @@ void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
 {
   int ip, j;
   double psize, norm;
-  double *conv_tmp = new double[nd];
 
   /* fft of pseudo image */
   memcpy(data_real, pseudo_img, nd*sizeof(double));
@@ -525,8 +527,6 @@ void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
       }
     }
   }
-
-  delete[] conv_tmp;
 }
 
 /* reduce the minimum pixon size */
@@ -558,6 +558,100 @@ void PixonFFT::increase_pixon_min()
 }
 
 int PixonFFT::get_ipxion_min()
+{
+  return ipixon_min;
+}
+
+/*==================================================================*/
+/* class PixonUniFFT */
+PixonUniFFT::PixonUniFFT()
+{
+  npixon = ipixon_min = 0;
+  pixon_sizes = NULL;
+}
+PixonUniFFT::PixonUniFFT(int npixel_in, int npixon_in)
+      :DataFFT(npixel_in, 1.0, npixon_in*pixon_size_factor), npixon(npixon_in)
+{
+  int i;
+
+  ipixon_min = npixon-1;
+  pixon_sizes = new double[npixon];
+  for(i=0; i<npixon; i++)
+  {
+    pixon_sizes[i] = (i+1)*1.0/pixon_sub_factor;
+  }
+  /* assume that all pixels have the largest pixon size */
+}
+
+PixonUniFFT::~PixonUniFFT()
+{
+  if(npixon > 0)
+  {
+    npixon = 0;
+    delete[] pixon_sizes;
+  }
+}
+
+void PixonUniFFT::convolve(const double *pseudo_img, int ipixon, double *conv)
+{
+  int ip, j;
+  double psize, norm;
+
+  /* fft of pseudo image */
+  memcpy(data_real, pseudo_img, nd*sizeof(double));
+  fftw_execute(pdata);
+
+  psize = pixon_sizes[ipixon];
+  /* setup resp */
+  norm = 0.0;
+  for(j=0; j<nd_fft/2; j++)
+  {
+    resp_real[j] = pixon_function(j, 0, psize);
+    norm += resp_real[j];
+  }
+  for(j=nd_fft-1; j>=nd_fft/2; j--)
+  {
+    resp_real[j] = pixon_function(j, nd_fft, psize);
+    norm += resp_real[j];
+  }
+  fftw_execute(presp);
+  
+  DataFFT::convolve_simple(conv);
+  for(j=0; j<nd; j++)
+  {
+    conv[j] = conv[j] / norm;
+  }
+}
+
+/* reduce the minimum pixon size */
+void PixonUniFFT::reduce_pixon_min()
+{
+  if(ipixon_min > 0)
+  {
+    ipixon_min--;
+  }
+  else 
+  {
+    cout<<"reach minimumly allowed pixon sizes!"<<endl;
+    exit(0);
+  }
+}
+
+/* reduce the minimum pixon size */
+void PixonUniFFT::increase_pixon_min()
+{
+  if(ipixon_min < npixon-1)
+  {
+    ipixon_min++;
+  }
+  else 
+  {
+    cout<<"reach maximumly allowed pixon sizes!"<<endl;
+    exit(0);
+  }
+}
+
+int PixonUniFFT::get_ipxion_min()
 {
   return ipixon_min;
 }

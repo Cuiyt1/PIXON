@@ -55,7 +55,7 @@ int main(int argc, char ** argv)
   pixon_sub_factor = 1;
   pixon_size_factor = 1;
   pixon_map_low_bound = pixon_sub_factor - 1;
-  npixon = 10*pixon_sub_factor/pixon_size_factor;
+  npixon = 20*pixon_sub_factor/pixon_size_factor;
 
   tau_range = tback;
   npixel = tau_range / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
@@ -110,8 +110,9 @@ int main(int argc, char ** argv)
   }
   
   run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
-  return 0;
-
+  //return 0;
+  
+  npixon = fmax(10, fmin(npixon*2, 40*pixon_sub_factor));
   run_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
   npixon = fmax(10, fmin(npixon*2, 40*pixon_sub_factor));
   run(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
@@ -143,8 +144,8 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   /* bounds and initial values */
   for(i=0; i<cont_recon.size; i++)
   {
-    low_cont[i] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
-    up_cont[i] =  cont_recon.flux[i] + 5.0 * cont_recon.error[i];
+    low_cont[i] = fmax(0.0, cont_recon.flux[i] - 3.0 * cont_recon.error[i]);
+    up_cont[i] =  cont_recon.flux[i] + 3.0 * cont_recon.error[i];
     x_cont[i] = cont_recon.flux[i];
   }
   
@@ -174,7 +175,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     npixon_cont--;
     cout<<"npixon_cont:"<<npixon_cont<<",  size: "<<pixon.pfft_cont.pixon_sizes[npixon_cont-1]<<endl;
     
-    pixon.reduce_pixon_map_cont();
+    pixon.reduce_ipixon_cont();
     num = pixon.compute_pixon_number_cont();
     
     for(i=0; i<cont_recon.size; i++)

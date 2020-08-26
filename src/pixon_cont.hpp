@@ -22,16 +22,16 @@ class PixonCont:public Pixon
     void compute_mem_grad(const double *x);
     void compute_mem_grad_cont(const double *x);
     double compute_pixon_number_cont();
-    void reduce_pixon_map_cont();
+    void reduce_ipixon_cont();
 
     Data cont_data;  /* continuum data */
-    PixonFFT pfft_cont; /* for continuum */
+    PixonUniFFT pfft_cont; /* uniform pixon, for continuum */
     RMFFT rmfft_pixon;
     
     double chisq_cont, mem_cont;
 
     double *residual_cont;   /* residual for continuum */
-    int *pixon_map_cont;   /* pixon map  for continuum */
+    int ipixon_cont;   /* pixon map  for continuum */
     double *image_cont;
     double *pseudo_image_cont;
     double *grad_chisq_cont;

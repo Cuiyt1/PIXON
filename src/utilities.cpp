@@ -815,8 +815,10 @@ double Pixon::interp_cont(double t)
 
   it = (t - cont.time[0])/dt;
 
-  if(it < 0 || it >= cont.size -1)
-    return 0.0;
+  if(it < 0)
+    return cont.flux[0];
+  else if(it >= cont.size -1)
+    return cont.flux[cont.size-1];
 
   return cont.flux[it] + (cont.flux[it+1] - cont.flux[it])/dt * (t - cont.time[it]);
 }
@@ -827,8 +829,10 @@ double Pixon::interp_pixon(double t)
 
   it = (t - cont.time[0])/dt;
 
-  if(it < 0 || it >= cont.size -1)
-    return 0.0;
+  if(it < 0)
+    return conv_pixon[0];
+  else if(it >= cont.size -1)
+    return conv_pixon[cont.size-1];
 
   return conv_pixon[it] + (conv_pixon[it+1] - conv_pixon[it])/dt * (t - cont.time[it]);
 }

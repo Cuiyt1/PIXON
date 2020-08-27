@@ -613,7 +613,6 @@ PixonUniFFT::PixonUniFFT(int npixel_in, int npixon_in)
   {
     pixon_sizes[i] = (i+1)*1.0/pixon_sub_factor;
   }
-  /* assume that all pixels have the largest pixon size */
 }
 
 PixonUniFFT::~PixonUniFFT()

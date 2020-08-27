@@ -64,7 +64,6 @@ int main(int argc, char ** argv)
   switch(pixon_type)
   {
     case 0:  /* Gaussian */
-      
       PixonBasis::norm_gaussian = sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0));
 
       pixon_function = PixonBasis::gaussian;
@@ -126,7 +125,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_pixon_uniform..."<<endl;
   int i, iter;
-  int npixon_cont = 20;
+  int npixon_cont = 10;
   PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
@@ -229,7 +228,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     fp<<pixon.cont.time[i]<<" "<<image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
-  
+
   cout<<"Start to RM"<<endl;
   /* then continuum and line reverberation */
   pixon.cont.set_data(image_cont);

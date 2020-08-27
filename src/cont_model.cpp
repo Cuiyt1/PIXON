@@ -172,7 +172,7 @@ ContModel::ContModel()
   PEmat1 = NULL;
   PEmat2 = NULL;
 }
-ContModel::ContModel(Data& cont_in, double tback, double tforward)
+ContModel::ContModel(Data& cont_in, double tback, double tforward, double dt_rec)
   :cont(cont_in)
 {
   int i;
@@ -183,7 +183,7 @@ ContModel::ContModel(Data& cont_in, double tback, double tforward)
   int n;
   double dt = (cont.time[cont.size-1] - cont.time[0])/(cont.size-1);
 
-  dt = fmin(fmax(dt, 1.0), 5.0);
+  dt = fmin(dt, dt_rec);
   n = (cont.time[cont.size - 1] + tforward - (cont.time[0] - tback))/dt;
   cout<<"size: "<<n<<endl;
   cont_recon.set_size(n);

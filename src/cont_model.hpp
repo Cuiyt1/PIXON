@@ -34,7 +34,7 @@ class ContModel
 {
   public:
     ContModel();
-    ContModel(Data& cont_in, double tback=100.0, double tforward=100.0);
+    ContModel(Data& cont_in, double tback=100.0, double tforward=100.0, double dt_rec=1.0);
     ~ContModel();
     void compute_mean_error();
     void mcmc();

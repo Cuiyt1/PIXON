@@ -32,8 +32,9 @@ int main(int argc, char ** argv)
   int pixon_type = atoi(argv[1]);
   cout<<"Pixon type: "<<pixon_type<<","<<PixonBasis::pixonbasis_name[pixon_type]<<endl;
 
-  double tau_range;
+  double tau_range, dt_rec;
   tau_range = 900.0;
+  dt_rec = 10.0;
 
   Data cont, line;
   string fcon, fline;
@@ -45,7 +46,7 @@ int main(int argc, char ** argv)
   /* continuum reconstruction */
   double tback = fmax(cont.time[0] - (line.time[0] - tau_range), 100.0);
   double tforward = 100.0;
-  cont_model = new ContModel(cont, tback, tforward);
+  cont_model = new ContModel(cont, tback, tforward, dt_rec);
   cont_model->mcmc();
   cont_model->get_best_params();
   cont_model->recon();
@@ -116,8 +117,8 @@ int main(int argc, char ** argv)
   run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
   npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
   run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type);
-  delete[] pimg;
 
+  delete[] pimg;
   return 0;
 }
 
@@ -197,6 +198,13 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     
     if(rc <0 || rc > 3)
     {
+      for(i=0; i<cont_recon.size; i++)
+      {
+        if(x_cont[i] < low_cont[i])
+          x_cont[i] = low_cont[i];
+        if(x_cont[i] > up_cont[i])
+          x_cont[i] = up_cont[i];
+      }
       opt0.optimize(x_cont, f);
     }
     
@@ -299,7 +307,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 
     num = pixon.compute_pixon_number();
     
-    for(i=0; i<npixel; i++)
+    for(i=0; i<ndim; i++)
     {
       if(x[i] < low[i])
         x[i] = low[i];
@@ -314,6 +322,13 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     
     if(rc <0 || rc > 3)
     {
+      for(i=0; i<ndim; i++)
+      {
+        if(x[i] < low[i])
+          x[i] = low[i];
+        if(x[i] > up[i])
+          x[i] = up[i];
+      }
       opt1.optimize(x, f);
     }
     
@@ -455,6 +470,13 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     
     if(rc <0 || rc > 3)
     {
+      for(i=0; i<cont_recon.size; i++)
+      {
+        if(x_cont[i] < low_cont[i])
+          x_cont[i] = low_cont[i];
+        if(x_cont[i] > up_cont[i])
+          x_cont[i] = up_cont[i];
+      }
       opt0.optimize(x_cont, f);
     }
     
@@ -571,6 +593,13 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     
     if(rc <0 || rc > 3)
     {
+      for(i=0; i<ndim; i++)
+      {
+        if(x[i] < low[i])
+          x[i] = low[i];
+        if(x[i] > up[i])
+          x[i] = up[i];
+      }
       opt1.optimize(x, f);
     }
     

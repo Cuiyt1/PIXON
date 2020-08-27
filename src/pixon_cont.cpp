@@ -94,14 +94,17 @@ double PixonCont::compute_chisquare_cont(const double *x)
 double PixonCont::compute_chisquare(const double *x)
 {
   /* calculate chi square */
-  chisq = Pixon::compute_chisquare(x) + compute_chisquare_cont(x + npixel);
-  
+  chisq_line = Pixon::compute_chisquare(x);
+  chisq_cont = compute_chisquare_cont(x + npixel);
+  chisq = chisq_line + chisq_cont;
   return chisq;
 }
 
 double PixonCont::compute_mem(const double *x)
 {
-  mem =  Pixon::compute_mem(x) + compute_mem_cont(x + npixel);
+  mem_line = Pixon::compute_mem(x);
+  mem_cont = compute_mem_cont(x + npixel);
+  mem =  mem_line + mem_cont;
   return mem;
 }
 

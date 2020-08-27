@@ -28,7 +28,7 @@ class PixonCont:public Pixon
     PixonUniFFT pfft_cont; /* uniform pixon, for continuum */
     RMFFT rmfft_pixon;
     
-    double chisq_cont, mem_cont;
+    double chisq_cont, mem_cont, chisq_line, mem_line;
 
     double *residual_cont;   /* residual for continuum */
     int ipixon_cont;   /* pixon map  for continuum */

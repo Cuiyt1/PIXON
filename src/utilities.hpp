@@ -137,7 +137,8 @@ class RMFFT:public DataFFT
     void set_data(double *cont, int n);
     /* convolution with resp, output to conv */
     void convolve(const double *resp, int n, double *conv);
-    
+    void convolve_bg(const double *resp, int n, double *conv, double bg = 0.0);
+
     friend class Pixon;
   private:
 };
@@ -228,6 +229,7 @@ class Pixon
     double dt;          /* time interval of continuum, image grid */
     double chisq;       /* chi square */
     double mem;         /* entropy */
+    double bg;          /* background */
     double *rmline;     /* reverberated line */
     double *itline;     /* interpolation of line to observed epochs */
     double *residual;   /* residual */

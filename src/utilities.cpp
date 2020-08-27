@@ -485,6 +485,24 @@ void RMFFT::convolve(const double *resp, int n, double *conv)
   DataFFT::convolve_simple(conv);
   return;
 }
+
+/* convolution with resp, output to conv */
+void RMFFT::convolve_bg(const double *resp, int n, double *conv, double bg)
+{
+  /* fft of resp */
+  memcpy(resp_real, resp, n * sizeof(double));
+  fftw_execute(presp);
+  
+  DataFFT::convolve_simple(conv);
+
+  int i;
+  for(i=0; i<nd; i++)
+  {
+    conv[i] += bg;
+  }
+  return;
+}
+
 /*==================================================================*/
 /* class PixonFFT */
 PixonFFT::PixonFFT()
@@ -693,6 +711,7 @@ int PixonUniFFT::get_ipxion_min()
 Pixon::Pixon()
 {
   npixel = 0;
+  bg = 0.0;
   pixon_map = NULL; 
   pixon_map_updated = NULL;
   image = pseudo_image = NULL;
@@ -709,7 +728,8 @@ Pixon::Pixon()
 }
 
 Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in)
-  :cont(cont_in), line(line_in), rmfft(cont_in), pfft(npixel_in, npixon_in), npixel(npixel_in)
+  :cont(cont_in), line(line_in), rmfft(cont_in), pfft(npixel_in, npixon_in), npixel(npixel_in),
+   bg(0.0)
 {
   pixon_map = new int[npixel];
   pixon_map_updated = new bool[npixel];
@@ -720,8 +740,8 @@ Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in)
   residual = new double[line.size];
   grad_pixon_low = new double[npixel];
   grad_pixon_up = new double[npixel];
-  grad_chisq = new double[npixel];
-  grad_mem = new double[npixel];
+  grad_chisq = new double[npixel+1];
+  grad_mem = new double[npixel+1];
   grad_mem_pixon_low = new double[npixel];
   grad_mem_pixon_up = new double[npixel];
   resp_pixon = new double[cont.size];
@@ -809,6 +829,7 @@ void Pixon::compute_rm_pixon(const double *x)
     pseudo_image[i] = exp(x[i]);
   }
   pfft.convolve(pseudo_image, pixon_map, image);
+  bg = x[npixel];
   
   /* enforce positive image */
   for(i=0; i<npixel; i++)
@@ -818,7 +839,7 @@ void Pixon::compute_rm_pixon(const double *x)
   }
   
   /* reverberation mapping */
-  rmfft.convolve(image, npixel, rmline);
+  rmfft.convolve_bg(image, npixel, rmline, bg);
 
   /* interpolation */
   for(i=0; i<line.size; i++)
@@ -893,6 +914,14 @@ void Pixon::compute_chisquare_grad(const double *x)
     }
     grad_chisq[i] = grad_out * 2.0 * pseudo_image[i];
   }
+  
+  /* with respect to background */
+  grad_out = 0.0;
+  for(k=0; k<line.size; k++)
+  {
+    grad_out += residual[k]/line.error[k]/line.error[k];
+  }
+  grad_chisq[npixel] = grad_out * 2.0;
 }
 
 /* calculate chisqure gradient with respect to pixon size 
@@ -991,6 +1020,7 @@ void Pixon::compute_mem_grad(const double *x)
     }
     grad_mem[i] = 2.0 * alpha * pseudo_image[i] * grad_in / Itot;
   }
+  grad_mem[npixel] = 0.0;
 }
 
 void Pixon::compute_mem_grad_pixon_low()
@@ -1227,7 +1257,7 @@ int func_tnc(double x[], double *f, double g[], void *state)
 
   *f = chisq + mem;
 
-  for(i=0; i<pixon->npixel; i++)
+  for(i=0; i<pixon->npixel+1; i++)
     g[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
 
   return 0;

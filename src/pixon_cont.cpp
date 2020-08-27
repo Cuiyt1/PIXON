@@ -73,7 +73,7 @@ void PixonCont::compute_rm_pixon(const double *x)
   int i;
   double t;
 
-  compute_cont(x + npixel);
+  compute_cont(x + npixel + 1);
   rmfft.set_data(image_cont, cont.size);
   Pixon::compute_rm_pixon(x);
 }
@@ -95,7 +95,7 @@ double PixonCont::compute_chisquare(const double *x)
 {
   /* calculate chi square */
   chisq_line = Pixon::compute_chisquare(x);
-  chisq_cont = compute_chisquare_cont(x + npixel);
+  chisq_cont = compute_chisquare_cont(x + npixel + 1);
   chisq = chisq_line + chisq_cont;
   return chisq;
 }
@@ -103,7 +103,7 @@ double PixonCont::compute_chisquare(const double *x)
 double PixonCont::compute_mem(const double *x)
 {
   mem_line = Pixon::compute_mem(x);
-  mem_cont = compute_mem_cont(x + npixel);
+  mem_cont = compute_mem_cont(x + npixel + 1);
   mem =  mem_line + mem_cont;
   return mem;
 }
@@ -149,7 +149,7 @@ double PixonCont::compute_pixon_number_cont()
 void PixonCont::compute_chisquare_grad(const double *x)
 {
   Pixon::compute_chisquare_grad(x);       /* derivative of chisq_line with respect to transfer function */
-  compute_chisquare_grad_cont(x+npixel);  /* derivative of chisq_cont with respect to continuum */
+  compute_chisquare_grad_cont(x+npixel+1);  /* derivative of chisq_cont with respect to continuum */
 
   /* derivative of chisq_line with respect to continuum */
   int i, j;
@@ -208,7 +208,7 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
 void PixonCont::compute_mem_grad(const double *x)
 {
   Pixon::compute_mem_grad(x);
-  compute_mem_grad_cont(x+npixel);
+  compute_mem_grad_cont(x+npixel+1);
 }
 
 void PixonCont::compute_mem_grad_cont(const double *x)
@@ -306,11 +306,11 @@ double func_nlopt_cont_rm(const vector<double> &x, vector<double> &grad, void *f
     pixon->compute_chisquare_grad(x.data());
     pixon->compute_mem_grad(x.data());
     
-    for(i=0; i<pixon->npixel; i++)
+    for(i=0; i<pixon->npixel+1; i++)
       grad[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
 
-    for(i=pixon->npixel; i<(int)grad.size(); i++)
-      grad[i] = pixon->grad_chisq_cont[i-pixon->npixel] + pixon->grad_mem_cont[i-pixon->npixel];
+    for(i=pixon->npixel+1; i<(int)grad.size(); i++)
+      grad[i] = pixon->grad_chisq_cont[i-pixon->npixel-1] + pixon->grad_mem_cont[i-pixon->npixel-1];
   }
   chisq = pixon->compute_chisquare(x.data());
   mem = pixon->compute_mem(x.data());
@@ -334,11 +334,11 @@ int func_tnc_cont_rm(double x[], double *f, double g[], void *state)
 
   *f = chisq + mem;
 
-  for(i=0; i<pixon->npixel; i++)
+  for(i=0; i<pixon->npixel+1; i++)
     g[i] = pixon->grad_chisq[i] + pixon->grad_mem[i];
 
-  for(i=pixon->npixel; i<pixon->cont.size + pixon->npixel; i++)
-    g[i] = pixon->grad_chisq_cont[i - pixon->npixel] + pixon->grad_mem_cont[i - pixon->npixel];
+  for(i=pixon->npixel+1; i<pixon->cont.size + pixon->npixel+1; i++)
+    g[i] = pixon->grad_chisq_cont[i - pixon->npixel - 1] + pixon->grad_mem_cont[i - pixon->npixel - 1];
 
   return 0;
 }

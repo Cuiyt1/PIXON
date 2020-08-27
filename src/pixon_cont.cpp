@@ -155,7 +155,7 @@ void PixonCont::compute_chisquare_grad(const double *x)
   int i, j;
   double psize, grad_in, grad_out, K, t;
   
-  rmfft_pixon.set_data(image, npixel);
+  rmfft_pixon.set_resp_real(image, npixel, 0);
   psize = pfft_cont.pixon_sizes[ipixon_cont];
   for(i=0; i<cont.size; i++)
   {
@@ -163,7 +163,8 @@ void PixonCont::compute_chisquare_grad(const double *x)
     {
       resp_pixon[j] = pixon_function(j, i, psize);
     }
-    rmfft_pixon.convolve(resp_pixon, cont.size, conv_pixon);
+    rmfft_pixon.set_data(resp_pixon, cont.size);
+    rmfft_pixon.convolve_simple(conv_pixon);
 
     grad_out = 0.0;
     for(j=0; j<line.size; j++)

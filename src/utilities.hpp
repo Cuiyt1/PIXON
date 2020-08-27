@@ -104,6 +104,7 @@ class DataFFT
     /* convolution with resp, output to conv */
     void convolve_simple(double *conv);
     double get_fft_norm(){return fft_norm;}
+    void set_resp_real(const double *resp, int nall, int ipositive);
  
   protected:
     int nd, npad, nd_fft, nd_fft_cal;

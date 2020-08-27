@@ -442,6 +442,21 @@ void DataFFT::convolve_simple(double *conv)
    memcpy(conv, conv_real, nd*sizeof(double));      
    return;
 }
+
+void DataFFT::set_resp_real(const double *resp, int nall, int ipositive)
+{
+  /* positive-lag part */
+  memcpy(resp_real, resp+ipositive, (nall - ipositive)*sizeof(double));
+
+  /* negative-lag part */
+  int i; 
+  for(i=0; i<ipositive; i++)
+  {
+    resp_real[nd_fft-1 - ipositive] = resp[i];
+  }
+  fftw_execute(presp);
+}
+
 /*==================================================================*/
 /* class RMFFT */
 RMFFT::RMFFT(int n, double dx)

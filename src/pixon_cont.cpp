@@ -11,9 +11,9 @@ PixonCont::PixonCont()
 
 PixonCont::PixonCont(
   Data& cont_data_in, Data& cont_in, Data& line_data_in, 
-  int npixel_in,  int npixon_in, int npixon_cont_in
+  int npixel_in,  int npixon_in, int npixon_cont_in, int ipositive_in
   )
-  :Pixon(cont_in, line_data_in, npixel_in, npixon_in),
+  :Pixon(cont_in, line_data_in, npixel_in, npixon_in, ipositive_in),
    cont_data(cont_data_in),
    pfft_cont(cont_in.size, npixon_cont_in),
    rmfft_pixon(cont_in.size, dt),
@@ -155,7 +155,7 @@ void PixonCont::compute_chisquare_grad(const double *x)
   int i, j;
   double psize, grad_in, grad_out, K, t;
   
-  rmfft_pixon.set_resp_real(image, npixel, 0);
+  rmfft_pixon.set_resp_real(image, npixel, ipositive);
   psize = pfft_cont.pixon_sizes[ipixon_cont];
   for(i=0; i<cont.size; i++)
   {

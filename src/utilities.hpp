@@ -139,6 +139,7 @@ class RMFFT:public DataFFT
     /* convolution with resp, output to conv */
     void convolve(const double *resp, int n, double *conv);
     void convolve_bg(const double *resp, int n, double *conv, double bg = 0.0);
+    void convolve_bg(const double *resp, int n, int ipositive, double *conv, double bg = 0.0);
 
     friend class Pixon;
   private:
@@ -194,7 +195,7 @@ class Pixon
 {
   public:
     Pixon();
-    Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in);
+    Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in=0);
     ~Pixon();
     double interp_line(double t);
     double interp_cont(double t);
@@ -226,6 +227,9 @@ class Pixon
     bool *pixon_map_updated;  /* pixons updated */
     double *image;           /* image */
     double *pseudo_image;    /* pseudo image */
+
+    double tau0;
+    int ipositive;
 
     double dt;          /* time interval of continuum, image grid */
     double chisq;       /* chi square */

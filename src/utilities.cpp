@@ -518,6 +518,22 @@ void RMFFT::convolve_bg(const double *resp, int n, double *conv, double bg)
   return;
 }
 
+/* convolution with resp, output to conv */
+void RMFFT::convolve_bg(const double *resp, int n, int ipositive, double *conv, double bg)
+{
+  /* fft of resp */
+  set_resp_real(resp, n, ipositive);
+  
+  DataFFT::convolve_simple(conv);
+
+  int i;
+  for(i=0; i<nd; i++)
+  {
+    conv[i] += bg;
+  }
+  return;
+}
+
 /*==================================================================*/
 /* class PixonFFT */
 PixonFFT::PixonFFT()
@@ -742,9 +758,9 @@ Pixon::Pixon()
   conv_pixon = NULL;
 }
 
-Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in)
+Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in)
   :cont(cont_in), line(line_in), rmfft(cont_in), pfft(npixel_in, npixon_in), npixel(npixel_in),
-   bg(0.0)
+   bg(0.0), ipositive(ipositive_in)
 {
   pixon_map = new int[npixel];
   pixon_map_updated = new bool[npixel];
@@ -768,6 +784,8 @@ Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in)
   {
     pixon_map[i] = npixon_in-1;  /* set the largest pixon size */
   }
+
+  tau0 = 0.0 - ipositive * dt;
 }
 
 Pixon::~Pixon()
@@ -858,7 +876,7 @@ void Pixon::compute_rm_pixon(const double *x)
   }
   
   /* reverberation mapping */
-  rmfft.convolve_bg(image, npixel, rmline, bg);
+  rmfft.convolve_bg(image, npixel, ipositive, rmline, bg);
 
   /* interpolation */
   for(i=0; i<line.size; i++)

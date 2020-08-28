@@ -9,7 +9,8 @@ class PixonCont:public Pixon
 {
   public:
     PixonCont();
-    PixonCont(Data& cont_data_in, Data& cont_in, Data& line_data_in, int npixel_in,  int npixon_in, int npixon_in_cont);
+    PixonCont(Data& cont_data_in, Data& cont_in, Data& line_data_in, int npixel_in,  
+              int npixon_in, int npixon_in_cont, int ipositive_in=0);
     ~PixonCont();
     void compute_cont(const double *x);
     void compute_rm_pixon(const double *x);

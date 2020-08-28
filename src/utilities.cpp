@@ -940,7 +940,9 @@ void Pixon::compute_chisquare_grad(const double *x)
       psize = pfft.pixon_sizes[pixon_map[j]];
       resp_pixon[j] = pixon_function(j, i, psize);
     }
-    rmfft.convolve(resp_pixon, npixel, conv_pixon);
+    rmfft.set_resp_real(resp_pixon, npixel, ipositive);
+    //rmfft.convolve(resp_pixon, npixel, conv_pixon);
+    rmfft.convolve_simple(conv_pixon);
 
     grad_out = 0.0;
     for(k=0; k<line.size; k++)
@@ -986,7 +988,7 @@ void Pixon::compute_chisquare_grad_pixon_low()
     }
     
     grad_out = 0.0;
-    tau = i * dt;
+    tau = tau0 + i * dt;
     for(k=0; k<line.size; k++)
     {
       t = line.time[k];
@@ -1023,7 +1025,7 @@ void Pixon::compute_chisquare_grad_pixon_up()
     }
 
     grad_out = 0.0;
-    tau = i * dt;
+    tau = tau0 + i * dt;
     for(k=0; k<line.size; k++)
     {
       t = line.time[k];

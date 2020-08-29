@@ -452,7 +452,7 @@ void DataFFT::set_resp_real(const double *resp, int nall, int ipositive)
   int i; 
   for(i=0; i<ipositive; i++)
   {
-    resp_real[nd_fft-1 - ipositive] = resp[i];
+    resp_real[nd_fft-ipositive+i] = resp[i];
   }
   fftw_execute(presp);
 }

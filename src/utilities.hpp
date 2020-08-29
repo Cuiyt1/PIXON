@@ -96,7 +96,7 @@ class DataFFT
     /* constructor, fft_dx is space width of the grid */
     DataFFT(int nd_in, double fft_dx, int npad_in=20);
     /* copy constructor, cont is continuum light curve */
-    DataFFT(Data& cont, int npad_in = 20);
+    DataFFT(Data& cont, int npad_in=20);
     /* operator = reload */
     DataFFT& operator = (DataFFT& df);
     /* destructor */
@@ -127,9 +127,9 @@ class RMFFT:public DataFFT
     /* default constructor */
     RMFFT(){}
     /* constructor */
-    RMFFT(int n, double dx);
-    RMFFT(int n, double *cont, double dx);
-    RMFFT(Data& cont);
+    RMFFT(int n, double dx, int npad_in = 20);
+    RMFFT(int n, double *cont, double dx, int npad_in = 20);
+    RMFFT(Data& cont, int npad_in = 20);
     /* destructor */
     ~RMFFT(){}
     /* set data using cont */

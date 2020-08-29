@@ -16,7 +16,7 @@ PixonCont::PixonCont(
   :Pixon(cont_in, line_data_in, npixel_in, npixon_in, ipositive_in),
    cont_data(cont_data_in),
    pfft_cont(cont_in.size, npixon_cont_in),
-   rmfft_pixon(cont_in.size, dt),
+   rmfft_pixon(cont_in.size, dt, fmax(npixel-ipositive_in, ipositive_in)),
    ipixon_cont(npixon_cont_in-1)
 {
   residual_cont = new double[cont_data_in.size];

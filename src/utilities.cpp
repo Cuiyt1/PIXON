@@ -459,20 +459,20 @@ void DataFFT::set_resp_real(const double *resp, int nall, int ipositive)
 
 /*==================================================================*/
 /* class RMFFT */
-RMFFT::RMFFT(int n, double dx)
-      :DataFFT(n, dx)
+RMFFT::RMFFT(int n, double dx, int npad_in)
+      :DataFFT(n, dx, npad_in)
 {
 }
 
-RMFFT::RMFFT(int n, double *cont, double dx)
-      :DataFFT(n, dx)
+RMFFT::RMFFT(int n, double *cont, double dx, int npad_in)
+      :DataFFT(n, dx, npad_in)
 {
   /* fft of cont setup only once */
   memcpy(data_real, cont, nd*sizeof(double));
   fftw_execute(pdata);
 }
     
-RMFFT::RMFFT(Data& cont):DataFFT(cont)
+RMFFT::RMFFT(Data& cont, int npad_in):DataFFT(cont, npad_in)
 {
   memcpy(data_real, cont.flux, nd*sizeof(double));
   fftw_execute(pdata);
@@ -759,7 +759,8 @@ Pixon::Pixon()
 }
 
 Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in)
-  :cont(cont_in), line(line_in), rmfft(cont_in), pfft(npixel_in, npixon_in), npixel(npixel_in),
+  :cont(cont_in), line(line_in), rmfft(cont_in, fmax(npixel_in-ipositive_in, ipositive_in)), 
+   pfft(npixel_in, npixon_in), npixel(npixel_in),
    bg(0.0), ipositive(ipositive_in)
 {
   pixon_map = new int[npixel];

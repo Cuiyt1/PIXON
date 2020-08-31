@@ -33,8 +33,8 @@ int main(int argc, char ** argv)
   cout<<"Pixon type: "<<pixon_type<<","<<PixonBasis::pixonbasis_name[pixon_type]<<endl;
 
   double tau_range_low, tau_range_up, dt_rec;
-  tau_range_low = -100.0;
-  tau_range_up = 900.0;
+  tau_range_low = -500.0;
+  tau_range_up = 500.0;
   dt_rec = 10.0;
 
   Data cont, line;
@@ -45,8 +45,9 @@ int main(int argc, char ** argv)
   line.load(fline);
 
   /* continuum reconstruction */
-  double tback = fmax(cont.time[0] - (line.time[0] - tau_range_up), 100.0);
-  double tforward = fmax((line.time[line.size-1] - tau_range_low) - cont.time[cont.size-1], 100.0);
+  double text_rec = 0.1 * (cont.time[cont.size] - cont.time[0]);
+  double tback = fmax(cont.time[0] - (line.time[0] - tau_range_up), text_rec);
+  double tforward = fmax((line.time[line.size-1] - tau_range_low) - cont.time[cont.size-1], text_rec);
   cont_model = new ContModel(cont, tback, tforward, dt_rec);
   cont_model->mcmc();
   cont_model->get_best_params();

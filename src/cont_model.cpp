@@ -14,8 +14,6 @@
 #include <cmath>
 #include <random>
 #include <float.h>
-#include <lapacke.h>
-#include <cblas.h>
 
 /* dnest header file */
 #include <dnestvars.h>
@@ -82,7 +80,11 @@ double prob_cont(const void *model)
   
   /* y^T x C^-1 x y*/
   multiply_matvec_semiseparable_drw(y, W, D, phi, cont.size, sigma2, ybuf);
-  prob = -0.5 * cblas_ddot(cont.size, y, 1, ybuf, 1);
+  for(i=0; i<cont.size; i++)
+  {
+    prob += y[i] * ybuf[i];
+  }
+  prob *= -0.5;
   prob += -0.5*lndet;
   return prob;
 }

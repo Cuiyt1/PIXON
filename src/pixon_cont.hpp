@@ -25,6 +25,8 @@ class PixonCont:public Pixon
     double compute_pixon_number_cont();
     void reduce_ipixon_cont();
 
+    double interp_Kpixon(double t);
+
     Data cont_data;  /* continuum data */
     PixonUniFFT pfft_cont; /* uniform pixon, for continuum */
     RMFFT rmfft_pixon;
@@ -37,7 +39,8 @@ class PixonCont:public Pixon
     double *pseudo_image_cont;
     double *grad_chisq_cont;
     double *grad_mem_cont;
-
+    
+    double *Kpixon;
   private:
 };
 

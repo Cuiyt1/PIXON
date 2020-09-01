@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
 
   npixel = (tau_range_up - tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
   ipositive_tau = (0.0 - tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
-  pimg = new double[npixel+1];
+  pimg = new double[npixel+1+cont_model->cont_recon.size];
   switch(pixon_type)
   {
     case 0:  /* Gaussian */
@@ -644,6 +644,8 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   }
+  
+  memcpy(pimg, x_old.data(), ndim*sizeof(double));
   
   cout<<"bg: "<<x_old[npixel]<<endl;
 

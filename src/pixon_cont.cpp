@@ -7,6 +7,8 @@ PixonCont::PixonCont()
   image_cont = pseudo_image_cont = NULL;
   residual_cont = NULL;
   grad_chisq_cont = NULL;
+  grad_mem_cont = NULL;
+  Kpixon = NULL;
 }
 
 PixonCont::PixonCont(
@@ -24,6 +26,7 @@ PixonCont::PixonCont(
   pseudo_image_cont = new double[cont_in.size];
   grad_chisq_cont = new double[cont_in.size];
   grad_mem_cont = new double[cont_in.size];
+  Kpixon = new double[2*cont_in.size];
 }
 
 PixonCont::~PixonCont()
@@ -35,6 +38,7 @@ PixonCont::~PixonCont()
     delete[] pseudo_image_cont;
     delete[] grad_chisq_cont;
     delete[] grad_mem_cont;
+    delete[] Kpixon;
   }
 }
 
@@ -177,6 +181,20 @@ void PixonCont::compute_chisquare_grad(const double *x)
   }
 }
 
+double PixonCont::interp_Kpixon(double t)
+{
+  int it;
+
+  it = t/dt + cont.size;
+
+  if(it < 0)
+    return Kpixon[0];
+  else if(it >= 2*cont.size -1)
+    return Kpixon[2*cont.size-1];
+
+  return Kpixon[it] + (Kpixon[it+1] - Kpixon[it])/dt * (t - (it-cont.size)*dt);
+}
+
 void PixonCont::compute_chisquare_grad_cont(const double *x)
 {
   int i, j, jt, jrange1, jrange2;
@@ -185,21 +203,20 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
   
   /* uniform pixon size */
   psize = pfft_cont.pixon_sizes[ipixon_cont];
+  for(j=0; j<cont.size*2; j++)
+  {
+    Kpixon[j] = pixon_function(j-cont.size, 0, psize);
+  }
   for(i=0; i<cont.size; i++)
   {
-    jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-2);
-    jrange2 = fmin(cont_data.size-2, i + pixon_size_factor * psize);
+    jrange1 = fmin(fmax(0, i - pixon_size_factor * psize), cont_data.size-1);
+    jrange2 = fmin(cont_data.size-1, i + pixon_size_factor * psize);
 
     grad_in = 0.0;
     for(j=jrange1; j<=jrange2; j++)
     {
-      tj = cont_data.time[j];
-      jt_real = (tj - cont.time[0])/dt;
-      jt = (int)jt_real;
-      
-      K  = pixon_function(i, jt, psize) * (1.0 - (jt_real - jt));
-          +pixon_function(i, jt+1, psize) * (jt_real - jt);
- 
+      tj = cont_data.time[j];      
+      K = interp_Kpixon(tj - cont.time[i]);
       grad_in += K * residual_cont[j]/cont_data.error[j]/cont_data.error[j];
     }
     grad_chisq_cont[i] = 2.0 * grad_in;
@@ -236,10 +253,9 @@ void PixonCont::compute_mem_grad_cont(const double *x)
       K = pixon_function(j, i, psize);
       grad_in += (1.0 + log(image_cont[j]/Itot)) * K;
     }
-    grad_mem_cont[i] = 2.0 * alpha * pseudo_image_cont[i] * grad_in / Itot;
+    grad_mem_cont[i] = 2.0 * alpha * grad_in / Itot;
   }
 }
-
 
 void PixonCont::reduce_ipixon_cont()
 {

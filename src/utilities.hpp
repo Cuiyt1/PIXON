@@ -153,6 +153,8 @@ class PixonFFT:public DataFFT
     PixonFFT(int npixel, int npixon);
     ~PixonFFT();
     void convolve(const double *pseudo_img, int *pixon_map, double *conv);
+    void convolve_pixon_diff_low(const double *pseudo_img, int *pixon_map, double *conv);
+    void convolve_pixon_diff_up(const double *pseudo_img, int *pixon_map, double *conv);
     /* reduce the minimum pixon size */
     void reduce_pixon_min();
     void increase_pixon_min();

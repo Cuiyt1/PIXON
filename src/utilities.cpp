@@ -611,6 +611,80 @@ void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
   }
 }
 
+void PixonFFT::convolve_pixon_diff_low(const double *pseudo_img, int *pixon_map, double *conv)
+{
+  int ip, j;
+  double psize, psize_low;
+
+  /* fft of pseudo image */
+  memcpy(data_real, pseudo_img, nd*sizeof(double));
+  fftw_execute(pdata);
+
+  /* loop over all pixon sizes */
+  for(ip=ipixon_min; ip<npixon; ip++)
+  {
+    if(pixon_sizes_num[ip] > 0)
+    {
+      psize = pixon_sizes[ip];
+      psize_low = pixon_sizes[ip-1];
+      /* setup resp */
+      for(j=0; j<nd_fft/2; j++)
+      {
+        resp_real[j] = pixon_function(j, 0, psize) - pixon_function(j, 0, psize_low);
+      }
+      for(j=nd_fft-1; j>=nd_fft/2; j--)
+      {
+        resp_real[j] = pixon_function(j, nd_fft, psize) - pixon_function(j, nd_fft, psize_low);
+      }
+      fftw_execute(presp);
+      
+      DataFFT::convolve_simple(conv_tmp);
+      for(j=0; j<nd; j++)
+      {
+        if(pixon_map[j] == ip)
+          conv[j] = conv_tmp[j];
+      }
+    }
+  }
+}
+
+void PixonFFT::convolve_pixon_diff_up(const double *pseudo_img, int *pixon_map, double *conv)
+{
+  int ip, j;
+  double psize, psize_up;
+
+  /* fft of pseudo image */
+  memcpy(data_real, pseudo_img, nd*sizeof(double));
+  fftw_execute(pdata);
+
+  /* loop over all pixon sizes */
+  for(ip=ipixon_min; ip<npixon; ip++)
+  {
+    if(pixon_sizes_num[ip] > 0)
+    {
+      psize = pixon_sizes[ip];
+      psize_up = pixon_sizes[ip+1];
+      /* setup resp */
+      for(j=0; j<nd_fft/2; j++)
+      {
+        resp_real[j] = pixon_function(j, 0, psize) - pixon_function(j, 0, psize_up);
+      }
+      for(j=nd_fft-1; j>=nd_fft/2; j--)
+      {
+        resp_real[j] = pixon_function(j, nd_fft, psize) - pixon_function(j, nd_fft, psize_up);
+      }
+      fftw_execute(presp);
+      
+      DataFFT::convolve_simple(conv_tmp);
+      for(j=0; j<nd; j++)
+      {
+        if(pixon_map[j] == ip)
+          conv[j] = conv_tmp[j];
+      }
+    }
+  }
+}
+
 /* reduce the minimum pixon size */
 void PixonFFT::reduce_pixon_min()
 {
@@ -899,7 +973,6 @@ double Pixon::compute_chisquare(const double *x)
   {
     chisq += (residual[i] * residual[i])/(line.error[i] * line.error[i]);
   }
-  //printf("%f\n", chisq);
   return chisq;
 }
 
@@ -923,9 +996,7 @@ double Pixon::compute_mem(const double *x)
   {
     mem += (image[i]/Itot) * log(image[i]/Itot);
   }
-  
   mem *= 2.0*alpha;
-
   return mem;
 }
 
@@ -973,21 +1044,11 @@ void Pixon::compute_chisquare_grad_pixon_low()
   int i, k, j;
   double psize, psize_low, t, grad_in, grad_out, K, grad_size, tau;
   int jrange1, jrange2;
+
+  pfft.convolve_pixon_diff_low(pseudo_image, pixon_map, conv_pixon);
   for(i=0; i<npixel; i++)
-  {
-    psize = pfft.pixon_sizes[pixon_map[i]];
-    psize_low = pfft.pixon_sizes[pixon_map[i]-1];
-
-    jrange1 = fmax(0, ceil(i-psize*pixon_size_factor));
-    jrange2 = fmin(npixel-1, ceil(i+psize*pixon_size_factor));
-
-    grad_size = 0.0;
-    for(j=jrange1; j<=jrange2; j++)
-    {
-      K = pixon_function(i, j, psize) - pixon_function(i, j, psize_low);
-      grad_size +=  K * pseudo_image[j]; 
-    }
-    
+  {   
+    grad_size = conv_pixon[i];
     grad_out = 0.0;
     tau = tau0 + i * dt;
     for(k=0; k<line.size; k++)
@@ -1010,21 +1071,10 @@ void Pixon::compute_chisquare_grad_pixon_up()
   double psize, psize_up, t, tau, grad_in, grad_out, grad_size, K;
   int jrange1, jrange2;
 
+  pfft.convolve_pixon_diff_up(pseudo_image, pixon_map, conv_pixon);
   for(i=0; i<npixel; i++)
   {
-    psize = pfft.pixon_sizes[pixon_map[i]];
-    psize_up = pfft.pixon_sizes[pixon_map[i]+1];
-    
-    jrange1 = fmax(0, ceil(i-psize_up*pixon_size_factor));
-    jrange2 = fmin(npixel-1, ceil(i+psize_up*pixon_size_factor));
-
-    grad_size = 0.0;
-    for(j=jrange1; j<=jrange2; j++)
-    {
-      K = pixon_function(i, j, psize_up) - pixon_function(i, j, psize);
-      grad_size +=  K * pseudo_image[j]; 
-    }
-
+    grad_size = conv_pixon[i];
     grad_out = 0.0;
     tau = tau0 + i * dt;
     for(k=0; k<line.size; k++)
@@ -1075,20 +1125,10 @@ void Pixon::compute_mem_grad_pixon_low()
   num = compute_pixon_number();
   alpha = log(num)/log(npixel);
 
+  pfft.convolve_pixon_diff_low(pseudo_image, pixon_map, conv_pixon);
   for(i=0; i<npixel; i++)
   {       
-    psize = pfft.pixon_sizes[pixon_map[i]];
-    psize_low = pfft.pixon_sizes[pixon_map[i]-1];
-    
-    jrange1 = fmax(0, ceil(i-psize*pixon_size_factor));
-    jrange2 = fmin(npixel-1, ceil(i+psize*pixon_size_factor));
-
-    grad_size = 0.0;
-    for(j=jrange1; j<=jrange2; j++)
-    {
-      K = pixon_function(i, j, psize) - pixon_function(i, j, psize_low);
-      grad_size +=  K * pseudo_image[j]; 
-    }
+    grad_size = conv_pixon[i];
     grad_in = (1.0 + log(image[i]/Itot));
     grad_mem_pixon_low[i] = 2.0* alpha * grad_in * grad_size / Itot;
   }
@@ -1106,20 +1146,10 @@ void Pixon::compute_mem_grad_pixon_up()
   num = compute_pixon_number();
   alpha = log(num)/log(npixel);
 
+  pfft.convolve_pixon_diff_up(pseudo_image, pixon_map, conv_pixon);
   for(i=0; i<npixel; i++)
   {       
-    psize = pfft.pixon_sizes[pixon_map[i]];
-    psize_up = pfft.pixon_sizes[pixon_map[i]+1];
-    
-    jrange1 = fmax(0, ceil(i-psize_up*pixon_size_factor));
-    jrange2 = fmin(npixel-1, ceil(i+psize_up*pixon_size_factor));
-
-    grad_size = 0.0;
-    for(j=jrange1; j<=jrange2; j++)
-    {
-      K = pixon_function(i, j, psize_up) - pixon_function(i, j, psize);
-      grad_size +=  K * pseudo_image[j]; 
-    }
+    grad_size = conv_pixon[i];
     grad_in = (1.0 + log(image[i]/Itot));
     grad_mem_pixon_up[i] = 2.0* alpha * grad_in * grad_size / Itot;
   }

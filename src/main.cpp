@@ -138,7 +138,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
-  double *image_cont=new double[cont_recon.size];
 
   /* TNC */
   int rc, maxCGit = cont_recon.size, maxnfeval = 10000, nfeval, niter;
@@ -175,7 +174,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   num_old = pixon.compute_pixon_number_cont();
   pixon.compute_cont(x_cont.data());
   chisq_old = pixon.compute_chisquare_cont(x_cont.data());
-  memcpy(image_cont, pixon.image_cont, cont_recon.size*sizeof(double));
   memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
  
@@ -219,7 +217,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 
     if(f <= fmin)
     {
-      memcpy(image_cont, pixon.image_cont, cont_recon.size*sizeof(double));
       memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
       break;
     }
@@ -233,26 +230,25 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     num_old = num;
     f_old = f;
     chisq_old = chisq;
-    memcpy(image_cont, pixon.image_cont, cont_recon.size*sizeof(double));
     memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
   }
   
+  pixon.compute_cont(x_old_cont.data());
   ofstream fp;
   fp.open("data/con_pixon.txt");
   for(i=0; i<cont_recon.size; i++)
   {
-    fp<<pixon.cont.time[i]<<" "<<image_cont[i]*pixon.cont.norm<<endl;
+    fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
 
   cout<<"Start to RM"<<endl;
   /* then continuum and line reverberation */
-  pixon.cont.set_data(image_cont);
+  pixon.cont.set_data(pixon.image_cont);
   /* TNC */
   int ndim = npixel + 1 + pixon.cont.size;
   maxCGit = ndim;
   fmin = pixon.line.size + pixon.cont_data.size;
-  double *image=new double[ndim], *itline=new double[pixon.line.size];
 
   /* NLopt */
   nlopt::opt opt1(nlopt::LN_BOBYQA, ndim);
@@ -300,9 +296,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   num_old = pixon.compute_pixon_number();
   pixon.compute_rm_pixon(x.data());
   chisq_old = pixon.compute_chisquare(x.data());
-  memcpy(image, pixon.image, npixel*sizeof(double));
-  memcpy(image+npixel, pixon.image_cont, pixon.cont.size*sizeof(double));
-  memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
   
@@ -346,9 +339,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 
     if(f <= fmin)
     {
-      memcpy(image, pixon.image, npixel*sizeof(double));
-      memcpy(image+npixel, pixon.image_cont, pixon.cont.size*sizeof(double));
-      memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
       memcpy(x_old.data(), x.data(), ndim*sizeof(double));
       break;
     }
@@ -367,21 +357,18 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     num_old = num;
     f_old = f;
     chisq_old = chisq;
-    memcpy(image, pixon.image, npixel*sizeof(double));
-    memcpy(image+npixel, pixon.image_cont, pixon.cont.size*sizeof(double));
-    memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   }while(pixon.pfft.get_ipxion_min() >= pixon_map_low_bound); 
   
   cout<<"bg: "<<x_old[npixel]<<endl;
-
+  pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
   fname = "data/resp_cont.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<image[i]<<exp(x_old[i])<<endl;
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<exp(x_old[i])<<endl;
   }
   fout.close();
 
@@ -389,20 +376,17 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
-    fout<<pixon.line.time[i]<<"  "<<itline[i]*pixon.line.norm<<"   "<<itline[i] - line.flux[i]<<endl;
+    fout<<pixon.line.time[i]<<"  "<<pixon.itline[i]*pixon.line.norm<<"   "<<pixon.itline[i] - line.flux[i]<<endl;
   }
   fout.close();
 
   fp.open("data/con_pixon_rm.txt");
   for(i=0; i<pixon.cont.size; i++)
   {
-    fp<<pixon.cont.time[i]<<" "<<image[i+npixel+1]*pixon.cont.norm<<endl;
+    fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
 
-  delete[] image_cont;
-  delete[] image;
-  delete[] itline;
 }
 
 /* set continuum free and use pixons to model continuum, uniform pixon sizes for RM */
@@ -416,7 +400,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
-  double *image_cont=new double[cont_recon.size];
 
   /* TNC */
   int rc, maxCGit = cont_recon.size, maxnfeval = 10000, nfeval, niter;
@@ -453,7 +436,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   num_old = pixon.compute_pixon_number_cont();
   pixon.compute_cont(x_cont.data());
   chisq_old = pixon.compute_chisquare_cont(x_cont.data());
-  memcpy(image_cont, pixon.image_cont, cont_recon.size*sizeof(double));
   memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
  
@@ -497,7 +479,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
 
     if(f <= fmin)
     {
-      memcpy(image_cont, pixon.image_cont, cont_recon.size*sizeof(double));
       memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
       break;
     }
@@ -511,26 +492,25 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     num_old = num;
     f_old = f;
     chisq_old = chisq;
-    memcpy(image_cont, pixon.image_cont, cont_recon.size*sizeof(double));
     memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
   }
   
+  pixon.compute_cont(x_old_cont.data());
   ofstream fp;
   fp.open("data/con_pixon.txt");
   for(i=0; i<cont_recon.size; i++)
   {
-    fp<<pixon.cont.time[i]<<" "<<image_cont[i]*pixon.cont.norm<<endl;
+    fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
 
   cout<<"Start to RM"<<endl;
   /* then continuum and line reverberation */
-  pixon.cont.set_data(image_cont);
+  pixon.cont.set_data(pixon.image_cont);
   /* TNC */
   int ndim = npixel + 1 + pixon.cont.size;
   maxCGit = ndim;
   fmin = pixon.line.size + pixon.cont_data.size;
-  double *image=new double[ndim], *itline=new double[pixon.line.size];
 
   /* NLopt */
   nlopt::opt opt1(nlopt::LN_BOBYQA, ndim);
@@ -578,9 +558,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   num_old = pixon.compute_pixon_number();
   pixon.compute_rm_pixon(x.data());
   chisq_old = pixon.compute_chisquare(x.data());
-  memcpy(image, pixon.image, npixel*sizeof(double));
-  memcpy(image+npixel, pixon.image_cont, pixon.cont.size*sizeof(double));
-  memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
@@ -623,9 +600,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
 
     if(f <= fmin)
     {
-      memcpy(image, pixon.image, npixel*sizeof(double));
-      memcpy(image+npixel, pixon.image_cont, pixon.cont.size*sizeof(double));
-      memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
       memcpy(x_old.data(), x.data(), ndim*sizeof(double));
       break;
     }
@@ -639,23 +613,20 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     num_old = num;
     f_old = f;
     chisq_old = chisq;
-    memcpy(image, pixon.image, npixel*sizeof(double));
-    memcpy(image+npixel, pixon.image_cont, pixon.cont.size*sizeof(double));
-    memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   }
   
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
   
   cout<<"bg: "<<x_old[npixel]<<endl;
-
+  pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
   fname = "data/resp_cont_uniform.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<image[i]<<exp(x_old[i])<<endl;
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<exp(x_old[i])<<endl;
   }
   fout.close();
 
@@ -663,20 +634,16 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
-    fout<<pixon.line.time[i]<<"  "<<itline[i]*pixon.line.norm<<"   "<<itline[i] - line.flux[i]<<endl;
+    fout<<pixon.line.time[i]<<"  "<<pixon.itline[i]*pixon.line.norm<<"   "<<pixon.itline[i] - line.flux[i]<<endl;
   }
   fout.close();
 
   fp.open("data/con_pixon_rm_uniform.txt");
   for(i=0; i<pixon.cont.size; i++)
   {
-    fp<<pixon.cont.time[i]<<" "<<image[i+npixel+1]*pixon.cont.norm<<endl;
+    fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
-
-  delete[] image_cont;
-  delete[] image;
-  delete[] itline;
 }
 
 /* set continuum fixed from a drw reconstruction and use pixel dependent pixon sizes for RM */
@@ -689,7 +656,6 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   void *args = (void *)&pixon;
   bool flag;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
-  double *image=new double[npixel], *itline=new double[pixon.line.size];
   
   int ndim = npixel + 1;  /* include one parameter for background */
   /* TNC */
@@ -729,8 +695,6 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   num_old = pixon.compute_pixon_number();
   pixon.compute_rm_pixon(x.data());
   chisq_old = pixon.compute_chisquare(x.data());
-  memcpy(image, pixon.image, npixel*sizeof(double));
-  memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
@@ -767,8 +731,6 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
 
     if(f <= pixon.line.size)
     {
-      memcpy(image, pixon.image, npixel*sizeof(double));
-      memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
       memcpy(x_old.data(), x.data(), ndim*sizeof(double));
       break;
     }
@@ -787,20 +749,19 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
     num_old = num;
     f_old = f;
     chisq_old = chisq;
-    memcpy(image, pixon.image, npixel*sizeof(double));
-    memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   }while(pixon.pfft.get_ipxion_min() >= pixon_map_low_bound); 
 
   cout<<"bg: "<<x_old[npixel]<<endl;
-
+  
+  pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
   fname = "data/resp.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<image[i]<<exp(x_old[i])<<"   "<<"  "<<endl;
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<exp(x_old[i])<<"   "<<"  "<<endl;
   }
   fout.close();
   
@@ -808,7 +769,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
-    fout<<pixon.line.time[i]<<"  "<<itline[i]*pixon.line.norm<<"   "<<itline[i] - line.flux[i]<<endl;
+    fout<<pixon.line.time[i]<<"  "<<pixon.itline[i]*pixon.line.norm<<"   "<<pixon.itline[i] - line.flux[i]<<endl;
   }
   fout.close();
 
@@ -819,9 +780,6 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
     fout<<(i-ipositive_tau)*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
   }
   fout.close();
-
-  delete[] image;
-  delete[] itline;
 
 }
 
@@ -834,7 +792,6 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   Pixon pixon(cont, line, npixel, npixon, ipositive_tau);
   void *args = (void *)&pixon;
   double f, f_old, num_old, num, df, dnum, chisq, chisq_old;
-  double *image=new double[npixel], *itline=new double[pixon.line.size];
  
   int ndim = npixel + 1;
   /* TNC */
@@ -875,8 +832,6 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   num_old = pixon.compute_pixon_number();
   pixon.compute_rm_pixon(x.data());
   chisq_old = pixon.compute_chisquare(x.data());
-  memcpy(image, pixon.image, npixel*sizeof(double));
-  memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
@@ -912,8 +867,6 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
 
     if(f <= pixon.line.size)
     {
-      memcpy(image, pixon.image, npixel*sizeof(double));
-      memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
       memcpy(x_old.data(), x.data(), ndim*sizeof(double));
       break;
     }
@@ -927,20 +880,19 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
     num_old = num;
     f_old = f;
     chisq_old = chisq;
-    memcpy(image, pixon.image, npixel*sizeof(double));
-    memcpy(itline, pixon.itline, pixon.line.size*sizeof(double));
     memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   }
   
   cout<<"bg: "<<x_old[npixel]<<endl;
-
+  
+  pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
   fname = "data/resp_uniform.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*(i-ipositive_tau)<<"   "<<image[i]<<"  "<<exp(x_old[i])<<endl;
+    fout<<pixon.dt*(i-ipositive_tau)<<"   "<<pixon.image[i]<<"  "<<exp(x_old[i])<<endl;
   }
   fout.close();
   
@@ -948,15 +900,10 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
-    fout<<pixon.line.time[i]<<"  "<<itline[i]*pixon.line.norm<<"   "<<itline[i] - line.flux[i]<<endl;
+    fout<<pixon.line.time[i]<<"  "<<pixon.itline[i]*pixon.line.norm<<"   "<<pixon.itline[i] - line.flux[i]<<endl;
   }
   fout.close();
   
-  memcpy(pixon.image, image, npixel*sizeof(double));
-  memcpy(pixon.itline, itline, pixon.line.size*sizeof(double));
-
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
 
-  delete[] image;
-  delete[] itline;
 }

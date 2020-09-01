@@ -45,7 +45,7 @@ int main(int argc, char ** argv)
   line.load(fline);
 
   /* continuum reconstruction */
-  double text_rec = 0.1 * (cont.time[cont.size] - cont.time[0]);
+  double text_rec = 0.1 * (cont.time[cont.size-1] - cont.time[0]);
   double tback = fmax(cont.time[0] - (line.time[0] - tau_range_up), text_rec);
   double tforward = fmax((line.time[line.size-1] - tau_range_low) - cont.time[cont.size-1], text_rec);
   cont_model = new ContModel(cont, tback, tforward, dt_rec);

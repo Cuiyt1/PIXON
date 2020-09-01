@@ -381,6 +381,14 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   }
   fout.close();
 
+  fname = "data/line_rec_full_cont.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<"  "<<pixon.rmline[i]*pixon.line.norm<<endl;
+  }
+  fout.close();
+
   fp.open("data/con_pixon_rm.txt");
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -639,6 +647,14 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   }
   fout.close();
 
+  fname = "data/line_rec_full_cont_uniform.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<"  "<<pixon.rmline[i]*pixon.line.norm<<endl;
+  }
+  fout.close();
+
   fp.open("data/con_pixon_rm_uniform.txt");
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -774,6 +790,14 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   }
   fout.close();
 
+  fname = "data/line_rec_full.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<"  "<<pixon.rmline[i]*pixon.line.norm<<endl;
+  }
+  fout.close();
+
   fname = "data/pixon_map.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
@@ -902,6 +926,14 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   for(i=0; i<pixon.line.size; i++)
   {
     fout<<pixon.line.time[i]<<"  "<<pixon.itline[i]*pixon.line.norm<<"   "<<pixon.itline[i] - line.flux[i]<<endl;
+  }
+  fout.close();
+
+  fname = "data/line_rec_full_uniform.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<"  "<<pixon.rmline[i]*pixon.line.norm<<endl;
   }
   fout.close();
   

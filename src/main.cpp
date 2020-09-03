@@ -207,17 +207,24 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
     {
       if(x[i] < low[i])
         x[i] = low[i];
-      if(x[i] > up[i])
+      else if(x[i] > up[i])
         x[i] = up[i];
     }
 
-    //opt0.optimize(x, f);
+    opt0.optimize(x, f);
     rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
     if(rc <0 || rc > 3)
     {
+      for(i=0; i<ndim; i++)
+      {
+        if(x[i] < low[i])
+          x[i] = low[i];
+        else if(x[i] > up[i])
+          x[i] = up[i];
+      }
       opt0.optimize(x, f);
     }
     
@@ -355,7 +362,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
     {
       if(x[i] < low[i])
         x[i] = low[i];
-      if(x[i] > up[i])
+      else if(x[i] > up[i])
         x[i] = up[i];
     }
 
@@ -370,7 +377,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
       {
         if(x[i] < low[i])
           x[i] = low[i];
-        if(x[i] > up[i])
+        else if(x[i] > up[i])
           x[i] = up[i];
       }
       opt0.optimize(x, f);
@@ -497,7 +504,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     {
       if(x_cont[i] < low_cont[i])
         x_cont[i] = low_cont[i];
-      if(x_cont[i] > up_cont[i])
+      else if(x_cont[i] > up_cont[i])
         x_cont[i] = up_cont[i];
     }
 
@@ -513,7 +520,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
       {
         if(x_cont[i] < low_cont[i])
           x_cont[i] = low_cont[i];
-        if(x_cont[i] > up_cont[i])
+        else if(x_cont[i] > up_cont[i])
           x_cont[i] = up_cont[i];
       }
       opt0.optimize(x_cont, f);
@@ -591,7 +598,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   {
     if(x[i] < low[i])
       x[i] = low[i];
-    if(x[i] > up[i])
+    else if(x[i] > up[i])
       x[i] = up[i];
   }
 
@@ -620,7 +627,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     {
       if(x[i] < low[i])
         x[i] = low[i];
-      if(x[i] > up[i])
+      else if(x[i] > up[i])
         x[i] = up[i];
     }
 
@@ -635,7 +642,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
       {
         if(x[i] < low[i])
           x[i] = low[i];
-        if(x[i] > up[i])
+        else if(x[i] > up[i])
           x[i] = up[i];
       }
       opt1.optimize(x, f);
@@ -767,7 +774,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     {
       if(x_cont[i] < low_cont[i])
         x_cont[i] = low_cont[i];
-      if(x_cont[i] > up_cont[i])
+      else if(x_cont[i] > up_cont[i])
         x_cont[i] = up_cont[i];
     }
 
@@ -783,7 +790,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
       {
         if(x_cont[i] < low_cont[i])
           x_cont[i] = low_cont[i];
-        if(x_cont[i] > up_cont[i])
+        else if(x_cont[i] > up_cont[i])
           x_cont[i] = up_cont[i];
       }
       opt0.optimize(x_cont, f);
@@ -861,7 +868,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   {
     if(x[i] < low[i])
       x[i] = low[i];
-    if(x[i] > up[i])
+    else if(x[i] > up[i])
       x[i] = up[i];
   }
 
@@ -889,7 +896,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     {
       if(x[i] < low[i])
         x[i] = low[i];
-      if(x[i] > up[i])
+      else if(x[i] > up[i])
         x[i] = up[i];
     }
 
@@ -904,7 +911,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
       {
         if(x[i] < low[i])
           x[i] = low[i];
-        if(x[i] > up[i])
+        else if(x[i] > up[i])
           x[i] = up[i];
       }
       opt1.optimize(x, f);
@@ -1035,7 +1042,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
     {
       if(x[i] < low[i])
         x[i] = low[i];
-      if(x[i] > up[i])
+      else if(x[i] > up[i])
         x[i] = up[i];
     }
 
@@ -1046,6 +1053,13 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
     
     if(rc <0 || rc > 3)
     {
+      for(i=0; i<ndim; i++)
+      {
+        if(x[i] < low[i])
+          x[i] = low[i];
+        else if(x[i] > up[i])
+          x[i] = up[i];
+      }
       opt0.optimize(x, f);
     }
     
@@ -1179,7 +1193,7 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
     {
       if(x[i] < low[i])
         x[i] = low[i];
-      if(x[i] > up[i])
+      else if(x[i] > up[i])
         x[i] = up[i];
     }
 
@@ -1190,6 +1204,13 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
     
     if(rc <0 || rc > 3)
     {
+      for(i=0; i<ndim; i++)
+      {
+        if(x[i] < low[i])
+          x[i] = low[i];
+        else if(x[i] > up[i])
+          x[i] = up[i];
+      }
       opt0.optimize(x, f);
     }
     

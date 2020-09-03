@@ -14,13 +14,11 @@ PixonDRW::PixonDRW()
 
 PixonDRW::PixonDRW(
    Data& cont_data_in, Data& cont_in, Data& line_data_in, 
-   int npixel_in,  int npixon_in, int npixon_cont_in, int ipositive_in,
+   int npixel_in,  int npixon_in, int ipositive_in,
    double sigmad_in, double taud_in, double syserr_in
   )
   :Pixon(cont_in, line_data_in, npixel_in, npixon_in, ipositive_in),
    cont_data(cont_data_in),
-   pfft_cont(cont_in.size, npixon_cont_in),
-   rmfft_pixon(cont_in.size, dt, fmax(npixel-ipositive_in, ipositive_in)),
    sigmad(sigmad_in), taud(taud_in), syserr(syserr_in)
 {
   int i;
@@ -86,7 +84,25 @@ double PixonDRW::compute_chisquare(const double *x)
   return chisq;
 }
 
-void PixonDRW::compute_chisquare_grad(const double *x)
+/* calculate prior of uq and us, which are Gaussian variables */
+double PixonDRW::compute_prior(const double *x)
+{
+  /* include prior */
+  int i;
+  prior = 0.0;
+  for(i=0; i<cont.size+nq; i++)
+  {
+    prior += x[npixel+1+i]*x[npixel+1+i];
+  }
+  return prior;
+}
+
+double PixonDRW::compute_post(const double *x)
+{
+  return compute_chisquare(x) + compute_prior(x);
+}
+
+void PixonDRW::compute_post_grad(const double *x)
 {
   Pixon::compute_chisquare_grad(x);       /* derivative of chisq_line with respect to transfer function */
 
@@ -111,6 +127,12 @@ void PixonDRW::compute_chisquare_grad(const double *x)
   multiply_mat_MN(QLmat, res_mat, grad_chisq_cont, nq, 1, cont.size);
   // w.r.t us
   multiply_mat_MN(PQmat, res_mat, grad_chisq_cont+nq, cont.size, 1, cont.size);
+
+  /* grad of prior */
+  for(i=0; i<cont.size+nq; i++)
+  {
+    grad_chisq_cont[i] += 2.0 * x[npixel+1+i];
+  }
 }
 
 double PixonDRW::compute_mem(const double *x)
@@ -285,7 +307,7 @@ double func_nlopt_cont_drw(const vector<double> &x, vector<double> &grad, void *
   {
     int i;
     
-    pixon->compute_chisquare_grad(x.data());
+    pixon->compute_post_grad(x.data());
     pixon->compute_mem_grad(x.data());
     
     for(i=0; i<pixon->npixel+1; i++)
@@ -294,7 +316,7 @@ double func_nlopt_cont_drw(const vector<double> &x, vector<double> &grad, void *
     for(i=pixon->npixel+1; i<(int)grad.size(); i++)
       grad[i] = pixon->grad_chisq_cont[i-pixon->npixel-1];
   }
-  chisq = pixon->compute_chisquare(x.data());
+  chisq = pixon->compute_post(x.data());
   mem = pixon->compute_mem(x.data());
   return chisq + mem;
 }
@@ -308,10 +330,10 @@ int func_tnc_cont_drw(double x[], double *f, double g[], void *state)
   double chisq, mem;
 
   pixon->compute_rm_pixon(x);
-  pixon->compute_chisquare_grad(x);
+  pixon->compute_post_grad(x);
   pixon->compute_mem_grad(x);
   
-  chisq = pixon->compute_chisquare(x);
+  chisq = pixon->compute_post(x);
   mem = pixon->compute_mem(x);
 
   *f = chisq + mem;

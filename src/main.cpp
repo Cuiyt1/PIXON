@@ -38,7 +38,7 @@ int main(int argc, char ** argv)
   double sigmad, taud, syserr;
   tau_range_low = 0.0;
   tau_range_up = 900.0;
-  dt_rec = 5.0;
+  dt_rec = 10.0;
 
   Data cont, line;
   string fcon, fline;
@@ -142,9 +142,8 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_drw..."<<endl;
   int i, iter;
-  int npixon_cont = 10;
   bool flag;
-  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, sigmad, taud, syserr);
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, ipositive_tau, sigmad, taud, syserr);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
@@ -292,9 +291,8 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_drw_uniform..."<<endl;
   int i, iter;
-  int npixon_cont = 10;
   bool flag;
-  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, sigmad, taud, syserr);
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, ipositive_tau, sigmad, taud, syserr);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
@@ -999,7 +997,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   {
     low[i] = -100.0;
     up[i] =  10.0;
-    x[i] = pimg[i];
+    x[i] = log(1.0/(npixel * pixon.dt));
   }
   low[npixel] = -1.0;
   up[npixel] = 1.0;

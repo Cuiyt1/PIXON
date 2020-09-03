@@ -10,14 +10,15 @@ class PixonDRW:public Pixon
   public:
     PixonDRW();
     PixonDRW(Data& cont_data_in, Data& cont_in, Data& line_data_in, int npixel_in,  
-              int npixon_in, int npixon_in_cont, int ipositive_in, 
+              int npixon_in, int ipositive_in, 
               double sigmad_in, double taud_in, double syserr_in);
     ~PixonDRW();
     void compute_cont(const double *x);
     void compute_rm_pixon(const double *x);
     double compute_chisquare(const double *x);
-    double compute_chisquare_cont(const double *x);
-    void compute_chisquare_grad(const double *x);
+    double compute_prior(const double *x);
+    double compute_post(const double *x);
+    void compute_post_grad(const double *x);
     double compute_mem(const double *x);
     void compute_mem_grad(const double *x);
     
@@ -26,11 +27,10 @@ class PixonDRW:public Pixon
     void set_covar_Pmat(double sigma, double tau, double alpha, double *PSmat);
 
     Data cont_data;  /* continuum data */
-    PixonUniFFT pfft_cont; /* uniform pixon, for continuum */
-    RMFFT rmfft_pixon;
     
     double sigmad, taud, syserr;
 
+    double prior;
     double *grad_chisq_cont;
     
     int nq;

@@ -264,6 +264,13 @@ void PixonCont::reduce_ipixon_cont()
   ipixon_cont--;
 }
 
+void PixonCont::increase_ipixon_cont()
+{
+  int i;
+  pfft_cont.increase_pixon_min();
+  ipixon_cont++;
+}
+
 /* function for nlopt */
 double func_nlopt_cont(const vector<double> &x, vector<double> &grad, void *f_data)
 {

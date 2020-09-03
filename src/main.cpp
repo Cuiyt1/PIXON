@@ -201,6 +201,10 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
     iter++;
     cout<<"iter:"<<iter<<endl;
 
+    flag = pixon.update_pixon_map();
+    if(!flag)
+      break;
+
     num = pixon.compute_pixon_number();
     
     for(i=0; i<ndim; i++)
@@ -237,17 +241,6 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
       memcpy(x_old.data(), x.data(), ndim*sizeof(double));
       break;
     }
-
-    df = f-f_old;
-    dnum = num - num_old;
-
-    //if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
-    //  break;
-
-    flag = pixon.update_pixon_map();
-
-    if(!flag)
-      break;
 
     num_old = num;
     f_old = f;
@@ -397,7 +390,11 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
     dnum = num - num_old;
 
     if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    {
+      /* pixon size go back to previous value */
+      pixon.increase_pixon_map_all();
       break;
+    }
 
     num_old = num;
     f_old = f;
@@ -540,7 +537,10 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     dnum = num - num_old;
 
     if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    {
+      pixon.increase_ipixon_cont();
       break;
+    }
 
     num_old = num;
     f_old = f;
@@ -620,6 +620,10 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   {
     iter++;
     cout<<"iter:"<<iter<<endl;
+    
+    flag = pixon.update_pixon_map();
+    if(!flag)
+      break;
 
     num = pixon.compute_pixon_number();
     
@@ -657,17 +661,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
       memcpy(x_old.data(), x.data(), ndim*sizeof(double));
       break;
     }
-
-    df = f-f_old;
-    dnum = num - num_old;
-
-    //if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
-    //  break;
-
-    flag = pixon.update_pixon_map();
-
-    if(!flag)
-      break;
 
     num_old = num;
     f_old = f;
@@ -810,7 +803,10 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     dnum = num - num_old;
 
     if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    {
+      pixon.increase_ipixon_cont();
       break;
+    }
 
     num_old = num;
     f_old = f;
@@ -931,7 +927,10 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     dnum = num - num_old;
 
     if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    {
+      pixon.increase_pixon_map_all();
       break;
+    }
 
     num_old = num;
     f_old = f;
@@ -1228,7 +1227,10 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
     dnum = num - num_old;
 
     if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    {
+      pixon.increase_pixon_map_all();
       break;
+    }
 
     num_old = num;
     f_old = f;

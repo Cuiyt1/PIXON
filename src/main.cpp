@@ -149,7 +149,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
 
   int ndim = npixel + 1 + cont_recon.size + 1;  /* include one parameter for background */
   /* TNC */
-  int rc, maxCGit = ndim, maxnfeval = 500, nfeval, niter;
+  int rc, maxCGit = ndim, maxnfeval = 10000, nfeval, niter;
   double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.line.size, 
     ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
   
@@ -178,7 +178,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   opt0.set_min_objective(func_nlopt_cont_drw, args);
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
-  opt0.set_maxeval(500);
+  opt0.set_maxeval(1000);
   opt0.set_ftol_abs(tol);
   opt0.set_xtol_abs(tol);
   
@@ -298,7 +298,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
 
   int ndim = npixel + 1 + cont_recon.size + 1;  /* include one parameter for background */
   /* TNC */
-  int rc, maxCGit = ndim, maxnfeval = 1000, nfeval, niter;
+  int rc, maxCGit = ndim, maxnfeval = 10000, nfeval, niter;
   double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.line.size, 
     ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
   
@@ -1006,7 +1006,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   opt0.set_min_objective(func_nlopt, args);
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
-  opt0.set_maxeval(10000);
+  opt0.set_maxeval(1000);
   opt0.set_ftol_abs(tol);
   opt0.set_xtol_abs(tol);
   
@@ -1151,7 +1151,7 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   opt0.set_min_objective(func_nlopt, args);
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
-  opt0.set_maxeval(10000);
+  opt0.set_maxeval(1000);
   opt0.set_ftol_abs(tol);
   opt0.set_xtol_abs(tol);
    

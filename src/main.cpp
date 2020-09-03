@@ -18,6 +18,7 @@
 #include "utilities.hpp"
 #include "cont_model.hpp"
 #include "pixon_cont.hpp"
+#include "drw_cont.hpp"
 #include "tnc.h"
 
 using namespace std;
@@ -34,9 +35,10 @@ int main(int argc, char ** argv)
 
   double tol = 1.0e-6;
   double tau_range_low, tau_range_up, dt_rec;
-  tau_range_low = -500.0;
-  tau_range_up = 500.0;
-  dt_rec = 10.0;
+  double sigmad, taud, syserr;
+  tau_range_low = 0.0;
+  tau_range_up = 900.0;
+  dt_rec = 5.0;
 
   Data cont, line;
   string fcon, fline;
@@ -53,6 +55,9 @@ int main(int argc, char ** argv)
   cont_model->mcmc();
   cont_model->get_best_params();
   cont_model->recon();
+  taud = exp(cont_model->best_params[2]);
+  sigmad = exp(cont_model->best_params[1])*sqrt(taud);
+  syserr = (exp(cont_model->best_params[0]) - 1.0) * cont_model->mean_error;
   
   int npixel;
   int npixon;
@@ -122,9 +127,313 @@ int main(int argc, char ** argv)
   run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, tol);
   npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
   run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, tol);
-
+  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
+  run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, tol, sigmad, taud, syserr);
+  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
+  run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, tol, sigmad, taud, syserr);
   delete[] pimg;
   return 0;
+}
+
+void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
+                    int& npixon, int pixon_type, int ipositive_tau, double tol,
+                    double sigmad, double taud, double syserr)
+{
+  cout<<"************************************************************"<<endl;
+  cout<<"Start run_cont_drw..."<<endl;
+  int i, iter;
+  int npixon_cont = 10;
+  bool flag;
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, sigmad, taud, syserr);
+  void *args = (void *)&pixon;
+  double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
+
+  int ndim = npixel + 1 + cont_recon.size + 1;  /* include one parameter for background */
+  /* TNC */
+  int rc, maxCGit = ndim, maxnfeval = 500, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.line.size, 
+    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  
+  /* NLopt */
+  nlopt::opt opt0(nlopt::LN_BOBYQA, ndim);
+  vector<double> x(ndim), g(ndim), x_old(ndim);
+  vector<double>low(ndim), up(ndim);
+
+  /* bounds and initial values */
+  for(i=0; i<npixel; i++)
+  {
+    low[i] = -100.0;
+    up[i] =  10.0;
+    x[i] = log(1.0/(npixel * pixon.dt));
+  }
+  low[npixel] = -1.0;
+  up[npixel] = 1.0;
+  x[npixel] = 0.0;
+  for(i=npixel+1; i<ndim; i++)
+  {
+    low[i] = -5.0;
+    up[i] =  5.0;
+    x[i] = 0.0;
+  }
+
+  opt0.set_min_objective(func_nlopt_cont_drw, args);
+  opt0.set_lower_bounds(low);
+  opt0.set_upper_bounds(up);
+  opt0.set_maxeval(500);
+  opt0.set_ftol_abs(tol);
+  opt0.set_xtol_abs(tol);
+  
+  opt0.optimize(x, f);
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+  
+  f_old = f;
+  num_old = pixon.compute_pixon_number();
+  pixon.compute_rm_pixon(x.data());
+  chisq_old = pixon.compute_chisquare(x.data());
+  memcpy(x_old.data(), x.data(), ndim*sizeof(double));
+  cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
+
+  /* then pixel-dependent pixon size */
+  iter = 0;
+  do
+  {
+    iter++;
+    cout<<"iter:"<<iter<<endl;
+
+    num = pixon.compute_pixon_number();
+    
+    for(i=0; i<ndim; i++)
+    {
+      if(x[i] < low[i])
+        x[i] = low[i];
+      if(x[i] > up[i])
+        x[i] = up[i];
+    }
+
+    //opt0.optimize(x, f);
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+    
+    if(rc <0 || rc > 3)
+    {
+      opt0.optimize(x, f);
+    }
+    
+    pixon.compute_rm_pixon(x.data());
+    chisq = pixon.compute_chisquare(x.data());
+    cout<<f<<"  "<<num<<"  "<<chisq<<endl;
+
+    if(f <= pixon.line.size)
+    {
+      memcpy(x_old.data(), x.data(), ndim*sizeof(double));
+      break;
+    }
+
+    df = f-f_old;
+    dnum = num - num_old;
+
+    //if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    //  break;
+
+    flag = pixon.update_pixon_map();
+
+    if(!flag)
+      break;
+
+    num_old = num;
+    f_old = f;
+    chisq_old = chisq;
+    memcpy(x_old.data(), x.data(), ndim*sizeof(double));
+  }while(pixon.pfft.get_ipxion_min() >= pixon_map_low_bound); 
+
+  cout<<"bg: "<<x_old[npixel]<<endl;
+  pixon.compute_rm_pixon(x_old.data());
+  ofstream fout;
+  string fname;
+  fname = "data/resp_drw.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<npixel; i++)
+  {
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<"  "<<exp(x_old[i])<<endl;
+  }
+  fout.close();
+
+  fname = "data/line_rec_drw.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.line.size; i++)
+  {
+    fout<<pixon.line.time[i]<<"  "<<pixon.itline[i]*pixon.line.norm<<"   "<<pixon.itline[i] - line.flux[i]<<endl;
+  }
+  fout.close();
+
+  fname = "data/line_rec_full_drw.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<"  "<<pixon.rmline[i]*pixon.line.norm<<endl;
+  }
+  fout.close();
+
+  fout.open("data/con_drw_rm.txt");
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<" "<<pixon.cont.flux[i]*pixon.cont.norm<<"  "<<pixon.cont.error[i]*pixon.cont.norm<<endl;
+  }
+  fout.close();
+}
+
+void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
+                    int& npixon, int pixon_type, int ipositive_tau, double tol,
+                    double sigmad, double taud, double syserr)
+{
+  cout<<"************************************************************"<<endl;
+  cout<<"Start run_cont_drw_uniform..."<<endl;
+  int i, iter;
+  int npixon_cont = 10;
+  bool flag;
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, sigmad, taud, syserr);
+  void *args = (void *)&pixon;
+  double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
+
+  int ndim = npixel + 1 + cont_recon.size + 1;  /* include one parameter for background */
+  /* TNC */
+  int rc, maxCGit = ndim, maxnfeval = 1000, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.line.size, 
+    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  
+  /* NLopt */
+  nlopt::opt opt0(nlopt::LN_BOBYQA, ndim);
+  vector<double> x(ndim), g(ndim), x_old(ndim);
+  vector<double>low(ndim), up(ndim);
+
+  /* bounds and initial values */
+  for(i=0; i<npixel; i++)
+  {
+    low[i] = -100.0;
+    up[i] =  10.0;
+    x[i] = log(1.0/(npixel * pixon.dt));
+  }
+  low[npixel] = -1.0;
+  up[npixel] = 1.0;
+  x[npixel] = 0.0;
+  for(i=npixel+1; i<ndim; i++)
+  {
+    low[i] = -5.0;
+    up[i] =  5.0;
+    x[i] = 0.0;
+  }
+
+  opt0.set_min_objective(func_nlopt_cont_drw, args);
+  opt0.set_lower_bounds(low);
+  opt0.set_upper_bounds(up);
+  opt0.set_maxeval(1000);
+  opt0.set_ftol_abs(tol);
+  opt0.set_xtol_abs(tol);
+  
+  opt0.optimize(x, f);
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+  
+  f_old = f;
+  num_old = pixon.compute_pixon_number();
+  pixon.compute_rm_pixon(x.data());
+  chisq_old = pixon.compute_chisquare(x.data());
+  memcpy(x_old.data(), x.data(), ndim*sizeof(double));
+  cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
+
+  while(npixon>pixon_map_low_bound+1)
+  {
+    npixon--;
+    cout<<"npixon:"<<npixon<<",  size: "<<pixon.pfft.pixon_sizes[npixon-1]<<endl;
+
+    pixon.reduce_pixon_map_all();
+    num = pixon.compute_pixon_number();
+
+    for(i=0; i<ndim; i++)
+    {
+      if(x[i] < low[i])
+        x[i] = low[i];
+      if(x[i] > up[i])
+        x[i] = up[i];
+    }
+
+    opt0.optimize(x, f);
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
+      maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
+      rescale, &nfeval, &niter, NULL);
+    
+    if(rc <0 || rc > 3)
+    {
+      for(i=0; i<ndim; i++)
+      {
+        if(x[i] < low[i])
+          x[i] = low[i];
+        if(x[i] > up[i])
+          x[i] = up[i];
+      }
+      opt0.optimize(x, f);
+    }
+    
+    pixon.compute_rm_pixon(x.data());
+    chisq = pixon.compute_chisquare(x.data());
+    cout<<f<<"  "<<num<<"  "<<chisq<<endl;
+
+    if(f <= fmin)
+    {
+      memcpy(x_old.data(), x.data(), ndim*sizeof(double));
+      break;
+    }
+    
+    df = f-f_old;
+    dnum = num - num_old;
+
+    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+      break;
+
+    num_old = num;
+    f_old = f;
+    chisq_old = chisq;
+    memcpy(x_old.data(), x.data(), ndim*sizeof(double));
+  }
+
+  cout<<"bg: "<<x_old[npixel]<<endl;
+  pixon.compute_rm_pixon(x_old.data());
+  ofstream fout;
+  string fname;
+  fname = "data/resp_drw_uniform.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<npixel; i++)
+  {
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<"  "<<exp(x_old[i])<<endl;
+  }
+  fout.close();
+
+  fname = "data/line_rec_drw_uniform.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.line.size; i++)
+  {
+    fout<<pixon.line.time[i]<<"  "<<pixon.itline[i]*pixon.line.norm<<"   "<<pixon.itline[i] - line.flux[i]<<endl;
+  }
+  fout.close();
+
+  fname = "data/line_rec_full_drw_uniform.txt_" + to_string(pixon_type);
+  fout.open(fname);
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<"  "<<pixon.rmline[i]*pixon.line.norm<<endl;
+  }
+  fout.close();
+
+  fout.open("data/con_drw_rm_uniform.txt");
+  for(i=0; i<pixon.cont.size; i++)
+  {
+    fout<<pixon.cont.time[i]<<" "<<pixon.cont.flux[i]*pixon.cont.norm<<"  "<<pixon.cont.error[i]*pixon.cont.norm<<endl;
+  }
+  fout.close();
 }
 
 /* set continuum free and use pixons to model continuum, pixel-dependent pixon sizes for RM */
@@ -369,7 +678,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<exp(x_old[i])<<endl;
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<"  "<<exp(x_old[i])<<endl;
   }
   fout.close();
 
@@ -635,7 +944,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<exp(x_old[i])<<endl;
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<"   "<<exp(x_old[i])<<endl;
   }
   fout.close();
 
@@ -778,7 +1087,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
-    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<exp(x_old[i])<<"   "<<"  "<<endl;
+    fout<<pixon.dt*(i-ipositive_tau)<<"  "<<pixon.image[i]<<"   "<<exp(x_old[i])<<endl;
   }
   fout.close();
   

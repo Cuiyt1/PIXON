@@ -199,6 +199,7 @@ class Pixon
     Pixon();
     Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in=0);
     ~Pixon();
+    double interp_image(double t);
     double interp_line(double t);
     double interp_cont(double t);
     double interp_pixon(double t);

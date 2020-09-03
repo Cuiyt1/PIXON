@@ -886,6 +886,17 @@ Pixon::~Pixon()
   }
 }
 
+double Pixon::interp_image(double t)
+{
+  int it;
+  it = (t - tau0)/dt;
+
+  if(it < 0 || it >= npixel -1)
+    return 0.0;
+
+  return image[it] + (image[it+1] - image[it])/dt * (t - (it-ipositive)*dt);
+}
+
 /* linear line interplolation  */
 double Pixon::interp_line(double t)
 {

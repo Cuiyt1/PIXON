@@ -18,6 +18,8 @@ add_library(utilities
    utilities.cpp 
    pixon_cont.hpp 
    pixon_cont.cpp
+   drw_cont.hpp
+   drw_cont.cpp
    test.cpp
    tnc.h
    tnc.c

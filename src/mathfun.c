@@ -1,7 +1,9 @@
-/* BRAINS
- * (B)LR (R)everberation-mapping (A)nalysis (I)n AGNs with (N)ested (S)ampling
- * Yan-Rong Li, liyanrong@ihep.ac.cn
- * Thu, Aug 4, 2016
+/*
+ *  PIXON
+ *  A Pixon-based method for reconstructing velocity-delay map in reverberation mapping.
+ * 
+ *  Yan-Rong Li, liyanrong@mail.ihep.ac.cn
+ * 
  */
 
 /*!

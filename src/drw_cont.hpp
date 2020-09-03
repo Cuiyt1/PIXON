@@ -1,3 +1,10 @@
+/*
+ *  PIXON
+ *  A Pixon-based method for reconstructing velocity-delay map in reverberation mapping.
+ * 
+ *  Yan-Rong Li, liyanrong@mail.ihep.ac.cn
+ * 
+ */
 #ifndef _DRW_CONT_HPP
 
 #define _DRW_CONT_HPP

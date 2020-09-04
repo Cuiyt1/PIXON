@@ -1034,6 +1034,10 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   {
     iter++;
     cout<<"iter:"<<iter<<endl;
+    
+    flag = pixon.update_pixon_map();
+    if(!flag)
+      break;
 
     num = pixon.compute_pixon_number();
     
@@ -1073,15 +1077,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
     }
 
     df = f-f_old;
-    dnum = num - num_old;
-
-    //if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
-    //  break;
-
-    flag = pixon.update_pixon_map();
-
-    if(!flag)
-      break;
+    dnum = num - num_old;   
 
     num_old = num;
     f_old = f;

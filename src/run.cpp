@@ -732,9 +732,9 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
-    fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
+    fout<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
   }
-  fp.close();
+  fout.close();
   
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }

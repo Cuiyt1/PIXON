@@ -35,4 +35,4 @@ find_path(CDNEST_INCLUDE_DIR NAMES dnestvars.h PATHS /home/liyropt/Projects/GIT/
 find_library(CDNEST_LIB NAMES dnest PATHS /home/liyropt/Projects/GIT/CDNestSingle)
 include_directories(${CDNEST_INCLUDE_DIR})
 
-target_link_libraries(pixon utilities cont_model ${NLOPT_LIB} ${FFTW3_LIB} ${LAPACKE_LIB} ${CBLAS_LIB} ${CDNEST_LIB})
+target_link_libraries(pixon utilities cont_model run test ${NLOPT_LIB} ${FFTW3_LIB} ${LAPACKE_LIB} ${CBLAS_LIB} ${CDNEST_LIB})

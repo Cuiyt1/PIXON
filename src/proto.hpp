@@ -7,6 +7,8 @@
  */
 #include "utilities.hpp"
 
+int run(int, bool, double);
+
 void run_pixon_uniform(Data&, Data&, double *, int, int& , int, int, double, bool, double);
 void run_pixon(Data&, Data&, double *, int, int&, int, int, double, bool, double);
 void run_cont_pixon_uniform(Data&, Data&, Data&, double *, int, int&, int, int, double, bool, double);

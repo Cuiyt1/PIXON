@@ -20,7 +20,6 @@ add_library(utilities
    pixon_cont.cpp
    drw_cont.hpp
    drw_cont.cpp
-   test.cpp
    tnc.h
    tnc.c
    mathfun.h 
@@ -31,4 +30,14 @@ add_library(cont_model
    SHARED 
    cont_model.hpp
    cont_model.cpp
+   )
+
+add_library(run
+   SHARED
+   run.cpp
+)
+
+add_library(test
+   SHARED 
+   test.cpp
    )

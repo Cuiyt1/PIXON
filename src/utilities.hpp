@@ -66,12 +66,13 @@ class Config
 
     /* fitting tolrence*/
     double tol;
-    int maxnfeval;
+    int nfeval_max;
 
     /* pixon config */
     int pixon_size_factor;
     int pixon_sub_factor;
     int pixon_map_low_bound;
+    int npixon_max;
 };
 extern Config config;
 

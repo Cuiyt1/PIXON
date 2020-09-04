@@ -31,12 +31,49 @@ extern int pixon_size_factor;
 extern int pixon_sub_factor;
 extern int pixon_map_low_bound;
 
+class Config;
 class PixonBasis;
 class Data;
 class DataFFT;
 class RMFFT;
 class PixonFFT;
 class Pixon;
+
+/*
+ * class for configuration
+ */
+class Config
+{
+  public:
+    Config();
+    ~Config();
+
+    /* background */
+    bool fix_bg;
+    double bg;
+
+    /* pixon type */
+    int pixon_type;
+
+    /* data file */
+    string fcon;
+    string fline;
+
+    /* transfer function */
+    double tau_range_low;
+    double tau_range_up;
+    double dt_rec;
+
+    /* fitting tolrence*/
+    double tol;
+    int maxnfeval;
+
+    /* pixon config */
+    int pixon_size_factor;
+    int pixon_sub_factor;
+    int pixon_map_low_bound;
+};
+extern Config config;
 
 /* 
  *  class for pixon basis functions

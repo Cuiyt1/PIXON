@@ -21,6 +21,28 @@ int pixon_map_low_bound;
 using namespace std;
 
 /*==================================================================*/
+/* class configuration */
+Config::Config()
+{
+  pixon_type = 0;
+
+  fix_bg = false;
+  bg = 0.0;
+
+  fcon = "data/con.txt";
+  fline = "data/line.txt";
+
+  pixon_size_factor = 1;
+  pixon_sub_factor = 1;
+  pixon_map_low_bound = pixon_sub_factor - 1;
+}
+Config::~Config()
+{
+
+}
+
+Config config;
+/*==================================================================*/
 /* class PixonBasis */
 
 double PixonBasis::norm_gaussian= sqrt(2*M_PI) * erf(3.0/sqrt(2.0));

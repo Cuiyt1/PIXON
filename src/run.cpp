@@ -452,7 +452,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
   }
   fout.close();
 
-  fname = "data/con_drw_rm.txt_" + to_string(pixon_type);
+  fname = "data/con_drw_rm_uniform.txt_" + to_string(pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {

@@ -74,7 +74,7 @@ int main(int argc, char ** argv)
 
   npixel = (tau_range_up - tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
   ipositive_tau = (0.0 - tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
-  pimg = new double[npixel+1+cont_model->cont_recon.size];
+  pimg = new double[npixel+1+cont_model->cont_recon.size+1];
   switch(pixon_type)
   {
     case 0:  /* Gaussian */
@@ -123,23 +123,29 @@ int main(int argc, char ** argv)
       break;
   }
   
-  run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, 
-                         tol, fix_bg, bg);
-  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
-  run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau,
-                 tol, fix_bg, bg);
-  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
+  /* continuum fixed with drw, line with pixon */
   run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, 
                     tol, fix_bg, bg);
   npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
   run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, 
             tol, fix_bg, bg);
+  
+  /* continuum free with pixon, line with pixon */
+  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
+  run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, 
+                         tol, fix_bg, bg);
+  npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
+  run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau,
+                 tol, fix_bg, bg);
+  
+  /* continuum free with drw, line with pixon */
   npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
   run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau, 
                        tol, fix_bg, bg, sigmad, taud, syserr);
   npixon = fmax(10, fmin(npixon+10, 20*pixon_sub_factor));
   run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, pixon_type, ipositive_tau,
                tol, fix_bg, bg, sigmad, taud, syserr);
+
   delete[] pimg;
   return 0;
 }
@@ -298,6 +304,8 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
     fout<<pixon.cont.time[i]<<" "<<pixon.cont.flux[i]*pixon.cont.norm<<"  "<<pixon.cont.error[i]*pixon.cont.norm<<endl;
   }
   fout.close();
+
+  memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
 void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
@@ -459,6 +467,8 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
     fout<<pixon.cont.time[i]<<" "<<pixon.cont.flux[i]*pixon.cont.norm<<"  "<<pixon.cont.error[i]*pixon.cont.norm<<endl;
   }
   fout.close();
+
+  memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
 /* set continuum free and use pixons to model continuum, pixel-dependent pixon sizes for RM */
@@ -732,7 +742,8 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
-
+  
+  memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
 /* set continuum free and use pixons to model continuum, uniform pixon sizes for RM */
@@ -976,8 +987,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   }
   
-  memcpy(pimg, x_old.data(), ndim*sizeof(double));
-  
   cout<<"bg: "<<x_old[npixel]<<endl;
   pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
@@ -1012,6 +1021,8 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
   }
   fp.close();
+
+  memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
 /* set continuum fixed from a drw reconstruction and use pixel dependent pixon sizes for RM */
@@ -1167,7 +1178,8 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
     fout<<(i-ipositive_tau)*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
   }
   fout.close();
-
+  
+  memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
 /* set continuum fixed from a drw reconstruction and use uniform pixon sizes for RM */

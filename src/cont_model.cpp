@@ -416,7 +416,7 @@ void ContModel::get_best_params()
 
   for(j = 0; j<num_params; j++)
     printf("Best params %d %f +- %f\n", j, *((double *)best_params + j), 
-                                           *((double *)best_params + j) ); 
+                                           *((double *)best_params_std + j) ); 
   delete[] post_model;
   delete[] posterior_sample;
 }

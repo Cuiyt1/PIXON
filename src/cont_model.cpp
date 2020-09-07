@@ -173,6 +173,8 @@ ContModel::ContModel()
   USmat = NULL;
   PEmat1 = NULL;
   PEmat2 = NULL;
+
+  dnest_free_fptrset(fptrset);
 }
 ContModel::ContModel(Data& cont_in, double tback, double tforward, double dt_rec)
   :cont(cont_in)

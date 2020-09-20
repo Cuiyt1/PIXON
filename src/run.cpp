@@ -105,14 +105,21 @@ int run(Config &cfg)
       break;
   }
   
-  /* continuum fixed with drw, line with pixon */
+  /* continuum fixed with drw, line with pixon 
+   * resp_uniform.txt, resp.txt
+   * line_rec_uniform.txt line_rec.txt 
+   */
   run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
                     cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
   npixon = fmax(10, fmin(npixon+10, npixon0));
   run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
             cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
   
-  /* continuum free with pixon, line with pixon */
+  /* continuum free with pixon, line with pixon 
+   * resp_pixon_uniform.txt, resp_pixon.txt
+   * line_rec_pixon_uniform.txt, line_rec_pixon.txt
+   * con_pixon_rm_uniform.txt, con_pixon_rm.txt
+   */
   npixon = fmax(10, fmin(npixon+10, npixon0));
   run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
                          cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
@@ -120,7 +127,11 @@ int run(Config &cfg)
   run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau,
                  cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
   
-  /* continuum free with drw, line with pixon */
+  /* continuum free with drw, line with pixon 
+   * resp_drw_uniform.txt, resp_drw.txt
+   * line_rec_drw_uniform.txt, line_rec_drw.txt
+   * con_drw_rm_uniform.txt, con_drw_rm.txt
+   */
   npixon = fmax(10, fmin(npixon+10, npixon0));
   run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
                        cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg, sigmad, taud, syserr);

@@ -20,6 +20,7 @@ using namespace std;
 
 int main(int argc, char ** argv)
 {
+  Config config; 
   /* if input pixon type */
   if(argc >= 2)
   {
@@ -31,11 +32,11 @@ int main(int argc, char ** argv)
   }
   cout<<"Pixon type: "<<config.pixon_type<<","<<PixonBasis::pixonbasis_name[config.pixon_type]<<endl;
   
-  config.fcon = "data/con.txt";
-  config.fline = "data/line.txt";
+  config.fcon = "data/ngc5548_W2.txt";
+  config.fline = "data/ngc5548_U.txt";
   
-  config.tau_range_low = 0.0;
-  config.tau_range_up = 900.0;
+  config.tau_range_low = -20.0;
+  config.tau_range_up = 50.0;
   config.dt_rec = 10.0;
 
   config.fix_bg = false;
@@ -47,7 +48,9 @@ int main(int argc, char ** argv)
   config.pixon_sub_factor = 1;
   config.pixon_size_factor = 1;
   config.pixon_map_low_bound = config.pixon_sub_factor - 1;
-  config.npixon_max = 30;
+  config.npixon_max = 20;
+  
+  config.print_cfg();
 
   run(config);
 

@@ -47,6 +47,7 @@ class Config
   public:
     Config();
     ~Config();
+    void print_cfg();
 
     /* background */
     bool fix_bg;
@@ -74,7 +75,6 @@ class Config
     int pixon_map_low_bound;
     int npixon_max;
 };
-extern Config config;
 
 /* 
  *  class for pixon basis functions

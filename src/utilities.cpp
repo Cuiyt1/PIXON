@@ -40,8 +40,26 @@ Config::~Config()
 {
 
 }
+void Config::print_cfg()
+{
+  ofstream fout;
+  fout.open("data/cfg_input");
+  fout<<setw(24)<<left<<"fcon"<<" = "<<fcon<<endl;
+  fout<<setw(24)<<left<<"fline"<<" = "<<fline<<endl;
+  fout<<setw(24)<<left<<"tau_range_low"<<" = "<<tau_range_low<<endl;
+  fout<<setw(24)<<left<<"tau_range_up"<<" = "<<tau_range_up<<endl;
+  fout<<setw(24)<<left<<"dt_rec"<<" = "<<dt_rec<<endl;
+  fout<<setw(24)<<left<<"fix_bg"<<" = "<<fix_bg<<endl;
+  fout<<setw(24)<<left<<"bg"<<" = "<<bg<<endl;
+  fout<<setw(24)<<left<<"tol"<<" = "<<tol<<endl;
+  fout<<setw(24)<<left<<"nfeval_max"<<" = "<<nfeval_max<<endl;
+  fout<<setw(24)<<left<<"pixon_sub_factor"<<" = "<<pixon_sub_factor<<endl;
+  fout<<setw(24)<<left<<"pixon_size_factor"<<" = "<<pixon_size_factor<<endl;
+  fout<<setw(24)<<left<<"pixon_map_low_bound"<<" = "<<pixon_map_low_bound<<endl;
+  fout<<setw(24)<<left<<"npixon_max"<<" = "<<npixon_max<<endl;
+  fout.close();
+}
 
-Config config;
 /*==================================================================*/
 /* class PixonBasis */
 

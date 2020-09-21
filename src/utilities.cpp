@@ -115,6 +115,7 @@ void Config::print_cfg()
 {
   ofstream fout;
   fout.open("data/cfg_input");
+  fout<<setw(24)<<left<<"pixon_type"<<" = "<<pixon_type<<endl;
   fout<<setw(24)<<left<<"fcon"<<" = "<<fcon<<endl;
   fout<<setw(24)<<left<<"fline"<<" = "<<fline<<endl;
   fout<<setw(24)<<left<<"tau_range_low"<<" = "<<tau_range_low<<endl;

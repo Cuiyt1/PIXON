@@ -24,6 +24,7 @@ add_library(utilities
    tnc.c
    mathfun.h 
    mathfun.c
+   cfgparser.hpp
    )
 
 add_library(cont_model

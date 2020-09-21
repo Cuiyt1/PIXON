@@ -20,6 +20,7 @@
 #include <fftw3.h>
 
 #include "tnc.h"
+#include "cfgparser.hpp"
 
 #define EPS (1.0e-50)
 
@@ -47,6 +48,7 @@ class Config
   public:
     Config();
     ~Config();
+    void load_cfg(string fname);
     void print_cfg();
 
     /* background */

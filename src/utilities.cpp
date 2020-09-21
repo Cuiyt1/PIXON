@@ -40,6 +40,77 @@ Config::~Config()
 {
 
 }
+
+void Config::load_cfg(string fname)
+{
+  ifstream is(fname);
+  configparser::ConfigParser<char> param;
+	param.parse(is);
+  //param.generate(std::cout);
+
+  if(!configparser::extract(param.sections["param"]["pixon_type"], pixon_type))
+  {
+    pixon_type = 0;
+  }
+  configparser::extract(param.sections["param"]["fcon"], fcon);
+  if(fcon.empty())
+  {
+    cout<<"fcon is not defined!"<<endl;
+    cout<<"exit!"<<endl;
+    exit(0);
+  }
+  configparser::extract(param.sections["param"]["fline"], fline);
+  if(fline.empty())
+  {
+    cout<<"fline is not defined!"<<endl;
+    cout<<"exit!"<<endl;
+    exit(0);
+  }
+  if(!configparser::extract(param.sections["param"]["tau_range_low"], tau_range_low))
+  {
+    tau_range_low = 0.0;
+  }
+  if(!configparser::extract(param.sections["param"]["tau_range_up"], tau_range_up))
+  {
+    tau_range_up = 10.0;
+  }
+  if(!configparser::extract(param.sections["param"]["dt_rec"], dt_rec))
+  {
+    dt_rec = 1.0;
+  }
+  if(!configparser::extract(param.sections["param"]["fix_bg"], fix_bg))
+  {
+    fix_bg = false;
+  }
+  if(!configparser::extract(param.sections["param"]["bg"], bg))
+  {
+    bg = 0.0;
+  }
+
+  if(!configparser::extract(param.sections["param"]["tol"], tol))
+  {
+    tol = 1.0e-6;
+  }
+  if(!configparser::extract(param.sections["param"]["nfeval_max"], nfeval_max))
+  {
+    nfeval_max = 10000;
+  }
+
+  if(!configparser::extract(param.sections["param"]["pixon_sub_factor"], pixon_sub_factor))
+  {
+    pixon_sub_factor = 1;
+  }
+  if(!configparser::extract(param.sections["param"]["pixon_size_factor"], pixon_size_factor))
+  {
+    pixon_size_factor = 1;
+  }
+  if(!configparser::extract(param.sections["param"]["npixon_max"], npixon_max))
+  {
+    npixon_max = 10;
+  }
+  pixon_map_low_bound = pixon_sub_factor - 1;
+}
+
 void Config::print_cfg()
 {
   ofstream fout;

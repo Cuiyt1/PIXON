@@ -110,7 +110,7 @@ void Config::load_cfg(string fname)
   }
   if(!configparser::extract(param.sections["param"]["sensitivity"], sensitivity))
   {
-    npixon_max = 10;
+    sensitivity = 10;
   }
   pixon_map_low_bound = pixon_sub_factor - 1;
 }

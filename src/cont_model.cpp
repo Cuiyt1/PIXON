@@ -26,7 +26,7 @@ using namespace std;
 
 ContModel* cont_model;
 
-double prob_cont(const void *model)
+double prob_cont(const void *model, const void *arg)
 {
   double prob = 0.0;
   int i, info;
@@ -89,7 +89,7 @@ double prob_cont(const void *model)
   return prob;
 }
 
-void from_prior_cont(void *model)
+void from_prior_cont(void *model, const void *arg)
 {
   int i;
   double *pm = (double *)model;
@@ -114,7 +114,7 @@ void from_prior_cont(void *model)
   }
 }
 
-void print_particle_cont(FILE *fp, const void *model)
+void print_particle_cont(FILE *fp, const void *model, const void *arg)
 {
   int i;
   double *pm = (double *)model;
@@ -126,7 +126,7 @@ void print_particle_cont(FILE *fp, const void *model)
   fprintf(fp, "\n");
 }
 
-double perturb_cont(void *model)
+double perturb_cont(void *model, const void *arg)
 {
   double *pm = (double *)model;
   double logH = 0.0, limit1, limit2, width, rnd;
@@ -315,7 +315,6 @@ void ContModel::mcmc()
   int i, argc=0;
   char **argv;
   double logz_con;
-  char dnest_options_file[256];
 
   argv = new char * [9];
   for(i=0; i<9; i++)
@@ -328,8 +327,7 @@ void ContModel::mcmc()
   strcpy(argv[argc], "./");
   strcat(argv[argc++], "/data/restart_dnest.txt");
 
-  strcpy(dnest_options_file, "src/OPTIONS");
-  logz_con = dnest(argc, argv, fptrset, num_params, "data/", dnest_options_file);
+  logz_con = dnest(argc, argv, fptrset, num_params, "data/", 1000, 0.1, NULL);
 
   for(i=0; i<9; i++)
   {

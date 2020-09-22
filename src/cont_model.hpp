@@ -25,10 +25,10 @@
 
 using namespace std;
 
-double prob_cont(const void *model);
-void from_prior_cont(void *model);
-void print_particle_cont(FILE *fp, const void *model);
-double perturb_cont(void *model);
+double prob_cont(const void *model, const void *arg);
+void from_prior_cont(void *model, const void *arg);
+void print_particle_cont(FILE *fp, const void *model, const void *arg);
+double perturb_cont(void *model, const void *arg);
 
 class ContModel
 {

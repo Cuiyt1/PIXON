@@ -18,4 +18,4 @@ nfeval_max        = 10000
 pixon_sub_factor  = 1
 pixon_size_factor = 1
 npixon_max        = 10
-sensitivity       = 1
+sensitivity       = 10

@@ -721,7 +721,7 @@ void setup(int argc, char** argv, DNestFptrSet *fptrset, int num_params, char *s
 
   count_mcmc_steps = 0;
   count_saves = 0;
-  num_saves = (int)fmax(0.02*options.max_num_saves, 1.0);
+  num_saves = options.max_num_saves;
   num_saves_restart = (int)fmax(0.2 * options.max_num_saves, 1.0);
 
 // first level

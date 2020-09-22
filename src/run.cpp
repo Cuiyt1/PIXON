@@ -33,6 +33,7 @@ int run(Config &cfg)
   line.load(cfg.fline); /* load line data */
 
   /* continuum reconstruction */
+  cout<<"Start cont reconstruction."<<endl;
   double text_rec = 0.1 * (cont.time[cont.size-1] - cont.time[0]);
   double tback = fmax(cont.time[0] - (line.time[0] - cfg.tau_range_up), text_rec);
   double tforward = fmax((line.time[line.size-1] - cfg.tau_range_low) - cont.time[cont.size-1], text_rec);
@@ -44,9 +45,9 @@ int run(Config &cfg)
   sigmad = exp(cont_model->best_params[1])*sqrt(taud);
   syserr = (exp(cont_model->best_params[0]) - 1.0) * cont_model->mean_error;
   
-  int npixel;
-  int npixon, npixon0;
-  int ipositive_tau;
+  int npixel;  /* number of pixels */
+  int npixon, npixon0; 
+  int ipositive_tau; /* index of zero lag */
   double *pimg;
 
   pixon_sub_factor = cfg.pixon_sub_factor;

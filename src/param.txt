@@ -1,20 +1,42 @@
-# pixon type, 0: Gaussian; 1: modified Gaussian
+# lines starting with "#" are regarded as comments.
 #
+#=============================================
+# pixon type, 
+# 0: Gaussian; 1: modified Gaussian; 2: Lorentz; 
+# 3: parabloid; 4: triangle; 5: top-hat
+#=============================================
 pixon_type        = 3
 
+#=============================================
+#  file name for continuum and emission line
+#=============================================
 fcon              = data/ngc5548_1367.txt
 fline             = data/ngc5548_U.txt
 
+#=============================================
+# range of time delay of transfer function
+# and time interval of transfer function
+#=============================================
 tau_range_low     = -15.0
 tau_range_up      = 15.0
 dt_rec            = 0.2
 
+
+#=============================================
+# background 
+#=============================================
 fix_bg            = no
 bg                = 0.0
 
+#=============================================
+# settting for optimizations
+#=============================================
 tol               = 1.0e-6
 nfeval_max        = 10000
 
+#=============================================
+# setting for pixon
+#=============================================
 pixon_sub_factor  = 1
 pixon_size_factor = 1
 npixon_max        = 10

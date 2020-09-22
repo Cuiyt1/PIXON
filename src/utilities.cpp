@@ -108,13 +108,17 @@ void Config::load_cfg(string fname)
   {
     npixon_max = 10;
   }
+  if(!configparser::extract(param.sections["param"]["sensitivity"], sensitivity))
+  {
+    npixon_max = 10;
+  }
   pixon_map_low_bound = pixon_sub_factor - 1;
 }
 
 void Config::print_cfg()
 {
   ofstream fout;
-  fout.open("data/cfg_input");
+  fout.open("data/param_input");
   fout<<setw(24)<<left<<"pixon_type"<<" = "<<pixon_type<<endl;
   fout<<setw(24)<<left<<"fcon"<<" = "<<fcon<<endl;
   fout<<setw(24)<<left<<"fline"<<" = "<<fline<<endl;
@@ -129,6 +133,7 @@ void Config::print_cfg()
   fout<<setw(24)<<left<<"pixon_size_factor"<<" = "<<pixon_size_factor<<endl;
   fout<<setw(24)<<left<<"pixon_map_low_bound"<<" = "<<pixon_map_low_bound<<endl;
   fout<<setw(24)<<left<<"npixon_max"<<" = "<<npixon_max<<endl;
+  fout<<setw(24)<<left<<"sensitivity"<<" = "<<sensitivity<<endl;
   fout.close();
 }
 
@@ -944,10 +949,10 @@ Pixon::Pixon()
   conv_pixon = NULL;
 }
 
-Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in)
+Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in, double sensitivity_in)
   :cont(cont_in), line(line_in), rmfft(cont_in, fmax(npixel_in-ipositive_in, ipositive_in)), 
    pfft(npixel_in, npixon_in), npixel(npixel_in),
-   bg(0.0), ipositive(ipositive_in)
+   bg(0.0), ipositive(ipositive_in), sensitivity(sensitivity_in)
 {
   pixon_map = new int[npixel];
   pixon_map_updated = new bool[npixel];
@@ -1368,7 +1373,7 @@ bool Pixon::update_pixon_map()
       psize_low = pfft.pixon_sizes[pixon_map[i]-1];
       num = pixon_norm(psize);
       dnum_low = pixon_norm(psize_low) - num;
-      if( grad_pixon_low[i] + grad_mem_pixon_low[i] > dnum_low  * (1.0 + 1.0/sqrt(2.0*num)))
+      if( grad_pixon_low[i] + grad_mem_pixon_low[i] > dnum_low  * (1.0 + 10.0/sqrt(2.0*num)))
       {
         reduce_pixon_map(i);
         pixon_map_updated[i] = true;

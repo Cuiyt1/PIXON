@@ -1,6 +1,6 @@
 # pixon type, 0: Gaussian; 1: modified Gaussian
 #
-pixon_type        = 0
+pixon_type        = 3
 
 fcon              = data/ngc5548_1367.txt
 fline             = data/ngc5548_U.txt
@@ -18,3 +18,4 @@ nfeval_max        = 10000
 pixon_sub_factor  = 1
 pixon_size_factor = 1
 npixon_max        = 10
+sensitivity       = 1

@@ -18,10 +18,10 @@ PixonCont::PixonCont()
 }
 
 PixonCont::PixonCont(
-  Data& cont_data_in, Data& cont_in, Data& line_data_in, 
-  int npixel_in,  int npixon_in, int npixon_cont_in, int ipositive_in
+  Data& cont_data_in, Data& cont_in, Data& line_data_in, int npixel_in,  
+  int npixon_in, int npixon_cont_in, int ipositive_in, double sensitivity_in
   )
-  :Pixon(cont_in, line_data_in, npixel_in, npixon_in, ipositive_in),
+  :Pixon(cont_in, line_data_in, npixel_in, npixon_in, ipositive_in, sensitivity_in),
    cont_data(cont_data_in),
    pfft_cont(cont_in.size, npixon_cont_in),
    rmfft_pixon(cont_in.size, dt, fmax(npixel-ipositive_in, ipositive_in)),

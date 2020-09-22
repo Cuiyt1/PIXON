@@ -76,6 +76,7 @@ class Config
     int pixon_sub_factor;
     int pixon_map_low_bound;
     int npixon_max;
+    double sensitivity;
 };
 
 /* 
@@ -237,7 +238,7 @@ class Pixon
 {
   public:
     Pixon();
-    Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in=0);
+    Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in=0, double sensitivity=1.0);
     ~Pixon();
     double interp_image(double t);
     double interp_line(double t);
@@ -273,6 +274,7 @@ class Pixon
 
     double tau0;
     int ipositive;
+    double sensitivity;
 
     double dt;          /* time interval of continuum, image grid */
     double chisq;       /* chi square */

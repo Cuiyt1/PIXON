@@ -29,8 +29,8 @@ int run(Config &cfg)
   double sigmad, taud, syserr;
 
   Data cont, line;
-  cont.load(cfg.fcon);
-  line.load(cfg.fline);
+  cont.load(cfg.fcon);  /* load cont data */
+  line.load(cfg.fline); /* load line data */
 
   /* continuum reconstruction */
   double text_rec = 0.1 * (cont.time[cont.size-1] - cont.time[0]);
@@ -109,11 +109,9 @@ int run(Config &cfg)
    * resp_uniform.txt, resp.txt
    * line_rec_uniform.txt line_rec.txt 
    */
-  run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
-                    cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
+  run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   npixon = fmax(10, fmin(npixon+10, npixon0));
-  run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
-            cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
+  run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   
   /* continuum free with pixon, line with pixon 
    * resp_pixon_uniform.txt, resp_pixon.txt
@@ -121,11 +119,9 @@ int run(Config &cfg)
    * con_pixon_rm_uniform.txt, con_pixon_rm.txt
    */
   npixon = fmax(10, fmin(npixon+10, npixon0));
-  run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
-                         cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
+  run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   npixon = fmax(10, fmin(npixon+10, npixon0));
-  run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau,
-                 cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg);
+  run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   
   /* continuum free with drw, line with pixon 
    * resp_drw_uniform.txt, resp_drw.txt
@@ -133,33 +129,30 @@ int run(Config &cfg)
    * con_drw_rm_uniform.txt, con_drw_rm.txt
    */
   npixon = fmax(10, fmin(npixon+10, npixon0));
-  run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau, 
-                       cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg, sigmad, taud, syserr);
+  run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
   npixon = fmax(10, fmin(npixon+10, npixon0));
-  run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, cfg.pixon_type, ipositive_tau,
-               cfg.tol, cfg.nfeval_max, cfg.fix_bg, cfg.bg, sigmad, taud, syserr);
+  run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
 
   delete[] pimg;
   return 0;
 }
 
 void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
-                    int& npixon, int pixon_type, int ipositive_tau, double tol, int maxnfe, bool fix_bg, double bg,
-                    double sigmad, double taud, double syserr)
+                    int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_drw..."<<endl;
   int i, iter;
   bool flag;
-  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, ipositive_tau, sigmad, taud, syserr);
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
   int ndim = npixel + 1 + cont_recon.size + 1;  /* include one parameter for background */
   /* TNC */
-  int rc, maxCGit = ndim, maxnfeval = maxnfe, nfeval, niter;
-  double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.line.size, 
-    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  int rc, maxCGit = ndim, maxnfeval = cfg.nfeval_max, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  cfg.tol, fmin = pixon.line.size, 
+    ftol = cfg.tol, xtol = cfg.tol, pgtol = cfg.tol, rescale = -1.0;
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, ndim);
@@ -173,9 +166,9 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
-  if(fix_bg)
+  if(cfg.fix_bg)
   {
-    low[npixel] = up[npixel] = x[npixel] = bg;
+    low[npixel] = up[npixel] = x[npixel] = cfg.bg;
   }
   else 
   {
@@ -194,8 +187,8 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
   opt0.set_maxeval(1000);
-  opt0.set_ftol_abs(tol);
-  opt0.set_xtol_abs(tol);
+  opt0.set_ftol_abs(cfg.tol);
+  opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x, f);
   rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
@@ -267,7 +260,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
-  fname = "data/resp_drw.txt_" + to_string(pixon_type);
+  fname = "data/resp_drw.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -275,7 +268,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   }
   fout.close();
 
-  fname = "data/line_rec_drw.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_drw.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -283,7 +276,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   }
   fout.close();
 
-  fname = "data/line_rec_full_drw.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_full_drw.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -291,7 +284,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   }
   fout.close();
   
-  fname = "data/con_drw_rm.txt_" + to_string(pixon_type);
+  fname = "data/con_drw_rm.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -303,22 +296,21 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
 }
 
 void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
-                    int& npixon, int pixon_type, int ipositive_tau, double tol, int maxnfe, bool fix_bg, double bg,
-                    double sigmad, double taud, double syserr)
+                  int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_drw_uniform..."<<endl;
   int i, iter;
   bool flag;
-  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, ipositive_tau, sigmad, taud, syserr);
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
   int ndim = npixel + 1 + cont_recon.size + 1;  /* include one parameter for background */
   /* TNC */
-  int rc, maxCGit = ndim, maxnfeval = maxnfe, nfeval, niter;
-  double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.line.size, 
-    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  int rc, maxCGit = ndim, maxnfeval = cfg.nfeval_max, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  cfg.tol, fmin = pixon.line.size, 
+    ftol = cfg.tol, xtol = cfg.tol, pgtol = cfg.tol, rescale = -1.0;
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, ndim);
@@ -332,9 +324,9 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
-  if(fix_bg)
+  if(cfg.fix_bg)
   {
-    low[npixel] = up[npixel] = x[npixel] = bg;
+    low[npixel] = up[npixel] = x[npixel] = cfg.bg;
   }
   else 
   {
@@ -353,8 +345,8 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
   opt0.set_maxeval(1000);
-  opt0.set_ftol_abs(tol);
-  opt0.set_xtol_abs(tol);
+  opt0.set_ftol_abs(cfg.tol);
+  opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x, f);
   rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
@@ -414,7 +406,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
     df = f-f_old;
     dnum = num - num_old;
 
-    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    if(-df < dnum * (1.0 + cfg.sensitivity/sqrt(2.0*num)))
     {
       /* pixon size go back to previous value */
       pixon.increase_pixon_map_all();
@@ -431,7 +423,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
   pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
-  fname = "data/resp_drw_uniform.txt_" + to_string(pixon_type);
+  fname = "data/resp_drw_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -439,7 +431,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
   }
   fout.close();
 
-  fname = "data/line_rec_drw_uniform.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_drw_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -447,7 +439,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
   }
   fout.close();
 
-  fname = "data/line_rec_full_drw_uniform.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_full_drw_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -455,7 +447,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
   }
   fout.close();
 
-  fname = "data/con_drw_rm_uniform.txt_" + to_string(pixon_type);
+  fname = "data/con_drw_rm_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -468,21 +460,21 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
 
 /* set continuum free and use pixons to model continuum, pixel-dependent pixon sizes for RM */
 void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
-                    int& npixon, int pixon_type, int ipositive_tau, double tol, int maxnfe, bool fix_bg, double bg)
+                    int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_pixon..."<<endl;
   bool flag;
   int i, iter;
   int npixon_cont = 10;
-  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau);
+  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
   /* TNC */
-  int rc, maxCGit = cont_recon.size, maxnfeval = maxnfe, nfeval, niter;
-  double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.cont_data.size, 
-    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  int rc, maxCGit = cont_recon.size, maxnfeval = cfg.nfeval_max, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  cfg.tol, fmin = pixon.cont_data.size, 
+    ftol = cfg.tol, xtol = cfg.tol, pgtol = cfg.tol, rescale = -1.0;
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, cont_recon.size);
@@ -501,8 +493,8 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   opt0.set_lower_bounds(low_cont);
   opt0.set_upper_bounds(up_cont);
   opt0.set_maxeval(1000);
-  opt0.set_ftol_abs(tol);
-  opt0.set_xtol_abs(tol);
+  opt0.set_ftol_abs(cfg.tol);
+  opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x_cont, f);
   rc = tnc(cont_recon.size, x_cont.data(), &f, g_cont.data(), func_tnc_cont, args, 
@@ -605,9 +597,9 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
-  if(fix_bg)
+  if(cfg.fix_bg)
   {
-    low[npixel] = up[npixel] = x[npixel] = bg;
+    low[npixel] = up[npixel] = x[npixel] = cfg.bg;
   }
   else 
   {
@@ -626,8 +618,8 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   opt1.set_lower_bounds(low);
   opt1.set_upper_bounds(up);
   opt1.set_maxeval(1000);
-  opt1.set_ftol_abs(tol);
-  opt1.set_xtol_abs(tol);
+  opt1.set_ftol_abs(cfg.tol);
+  opt1.set_xtol_abs(cfg.tol);
   
   for(i=0; i<ndim; i++)
   {
@@ -707,7 +699,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
-  fname = "data/resp_cont.txt_" + to_string(pixon_type);
+  fname = "data/resp_cont.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -715,7 +707,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   }
   fout.close();
 
-  fname = "data/line_rec_cont.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_cont.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -723,7 +715,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   }
   fout.close();
 
-  fname = "data/line_rec_full_cont.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_full_cont.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -731,7 +723,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
   }
   fout.close();
   
-  fname = "data/con_pixon_rm.txt_" + to_string(pixon_type);
+  fname = "data/con_pixon_rm.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -744,22 +736,20 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 
 /* set continuum free and use pixons to model continuum, uniform pixon sizes for RM */
 void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, 
-                            int npixel, int& npixon, int pixon_type, int ipositive_tau, 
-                            double tol, int maxnfe,
-                            bool fix_bg, double bg)
+                            int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_pixon_uniform..."<<endl;
   int i, iter;
   int npixon_cont = 10;
-  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau);
+  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
   /* TNC */
-  int rc, maxCGit = cont_recon.size, maxnfeval = maxnfe, nfeval, niter;
-  double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.cont_data.size, 
-    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  int rc, maxCGit = cont_recon.size, maxnfeval = cfg.nfeval_max, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  cfg.tol, fmin = pixon.cont_data.size, 
+    ftol = cfg.tol, xtol = cfg.tol, pgtol = cfg.tol, rescale = -1.0;
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, cont_recon.size);
@@ -778,8 +768,8 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   opt0.set_lower_bounds(low_cont);
   opt0.set_upper_bounds(up_cont);
   opt0.set_maxeval(1000);
-  opt0.set_ftol_abs(tol);
-  opt0.set_xtol_abs(tol);
+  opt0.set_ftol_abs(cfg.tol);
+  opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x_cont, f);
   rc = tnc(cont_recon.size, x_cont.data(), &f, g_cont.data(), func_tnc_cont, args, 
@@ -882,9 +872,9 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
-  if(fix_bg)
+  if(cfg.fix_bg)
   {
-    low[npixel] = up[npixel] = x[npixel] = bg;
+    low[npixel] = up[npixel] = x[npixel] = cfg.bg;
   }
   else 
   {
@@ -903,8 +893,8 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   opt1.set_lower_bounds(low);
   opt1.set_upper_bounds(up);
   opt1.set_maxeval(1000);
-  opt1.set_ftol_abs(tol);
-  opt1.set_xtol_abs(tol);
+  opt1.set_ftol_abs(cfg.tol);
+  opt1.set_xtol_abs(cfg.tol);
   
   for(i=0; i<ndim; i++)
   {
@@ -972,7 +962,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     df = f-f_old;
     dnum = num - num_old;
 
-    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    if(-df < dnum * (1.0 + cfg.sensitivity/sqrt(2.0*num)))
     {
       pixon.increase_pixon_map_all();
       break;
@@ -988,7 +978,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
-  fname = "data/resp_cont_uniform.txt_" + to_string(pixon_type);
+  fname = "data/resp_cont_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -996,7 +986,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   }
   fout.close();
 
-  fname = "data/line_rec_cont_uniform.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_cont_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -1004,7 +994,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   }
   fout.close();
 
-  fname = "data/line_rec_full_cont_uniform.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_full_cont_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -1012,7 +1002,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
   }
   fout.close();
   
-  fname = "data/con_pixon_rm_uniform.txt_" + to_string(pixon_type);
+  fname = "data/con_pixon_rm_uniform.txt_" + to_string(cfg.pixon_type);
   fp.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -1024,22 +1014,21 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
 }
 
 /* set continuum fixed from a drw reconstruction and use pixel dependent pixon sizes for RM */
-void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type, int ipositive_tau, 
-               double tol, int maxnfe, bool fix_bg, double bg)
+void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_pixon..."<<endl;
   int i, iter;
-  Pixon pixon(cont, line, npixel, npixon, ipositive_tau);
+  Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   bool flag;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
   
   int ndim = npixel + 1;  /* include one parameter for background */
   /* TNC */
-  int rc, maxCGit = ndim, maxnfeval = maxnfe, nfeval, niter;
-  double eta = -1.0, stepmx = -1.0, accuracy =  tol, fmin = pixon.line.size, 
-    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  int rc, maxCGit = ndim, maxnfeval = cfg.nfeval_max, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy =  cfg.tol, fmin = pixon.line.size, 
+    ftol = cfg.tol, xtol = cfg.tol, pgtol = cfg.tol, rescale = -1.0;
   
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, ndim);
@@ -1053,9 +1042,9 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
-  if(fix_bg)
+  if(cfg.fix_bg)
   {
-    low[npixel] = up[npixel] = x[npixel] = bg;
+    low[npixel] = up[npixel] = x[npixel] = cfg.bg;
   }
   else 
   {
@@ -1068,8 +1057,8 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
   opt0.set_maxeval(1000);
-  opt0.set_ftol_abs(tol);
-  opt0.set_xtol_abs(tol);
+  opt0.set_ftol_abs(cfg.tol);
+  opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x, f);
   rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
@@ -1145,7 +1134,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
-  fname = "data/resp.txt_" + to_string(pixon_type);
+  fname = "data/resp.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -1153,7 +1142,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   }
   fout.close();
   
-  fname = "data/line_rec.txt_" + to_string(pixon_type);
+  fname = "data/line_rec.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -1161,7 +1150,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   }
   fout.close();
 
-  fname = "data/line_rec_full.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_full.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -1169,7 +1158,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
   }
   fout.close();
 
-  fname = "data/pixon_map.txt_" + to_string(pixon_type);
+  fname = "data/pixon_map.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -1181,21 +1170,20 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
 }
 
 /* set continuum fixed from a drw reconstruction and use uniform pixon sizes for RM */
-void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int pixon_type, int ipositive_tau, 
-                       double tol, int maxnfe, bool fix_bg, double bg)
+void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_uniform..."<<endl;
   int i;
-  Pixon pixon(cont, line, npixel, npixon, ipositive_tau);
+  Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num_old, num, df, dnum, chisq, chisq_old;
  
   int ndim = npixel + 1;
   /* TNC */
-  int rc, maxCGit = ndim, maxnfeval = maxnfe, nfeval, niter;
-  double eta = -1.0, stepmx = -1.0, accuracy = tol, fmin = pixon.line.size, 
-    ftol = tol, xtol = tol, pgtol = tol, rescale = -1.0;
+  int rc, maxCGit = ndim, maxnfeval = cfg.nfeval_max, nfeval, niter;
+  double eta = -1.0, stepmx = -1.0, accuracy = cfg.tol, fmin = pixon.line.size, 
+    ftol = cfg.tol, xtol = cfg.tol, pgtol = cfg.tol, rescale = -1.0;
 
   /* NLopt */
   nlopt::opt opt0(nlopt::LN_BOBYQA, ndim);
@@ -1209,9 +1197,9 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
-  if(fix_bg)
+  if(cfg.fix_bg)
   {
-    low[npixel] = up[npixel] = x[npixel] = bg;
+    low[npixel] = up[npixel] = x[npixel] = cfg.bg;
   }
   else 
   {
@@ -1225,8 +1213,8 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
   opt0.set_maxeval(1000);
-  opt0.set_ftol_abs(tol);
-  opt0.set_xtol_abs(tol);
+  opt0.set_ftol_abs(cfg.tol);
+  opt0.set_xtol_abs(cfg.tol);
    
   opt0.optimize(x, f);
   rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_ALL,
@@ -1286,7 +1274,7 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
     df = f-f_old;
     dnum = num - num_old;
 
-    if(-df < dnum * (1.0 + 1.0/sqrt(2.0*num)))
+    if(-df < dnum * (1.0 + cfg.sensitivity/sqrt(2.0*num)))
     {
       pixon.increase_pixon_map_all();
       break;
@@ -1303,7 +1291,7 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   pixon.compute_rm_pixon(x_old.data());
   ofstream fout;
   string fname;
-  fname = "data/resp_uniform.txt_" + to_string(pixon_type);
+  fname = "data/resp_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -1311,7 +1299,7 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   }
   fout.close();
   
-  fname = "data/line_rec_uniform.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.line.size; i++)
   {
@@ -1319,7 +1307,7 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
   }
   fout.close();
 
-  fname = "data/line_rec_full_uniform.txt_" + to_string(pixon_type);
+  fname = "data/line_rec_full_uniform.txt_" + to_string(cfg.pixon_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {

@@ -17,8 +17,8 @@ class PixonDRW:public Pixon
   public:
     PixonDRW();
     PixonDRW(Data& cont_data_in, Data& cont_in, Data& line_data_in, int npixel_in,  
-              int npixon_in, int ipositive_in, 
-              double sigmad_in, double taud_in, double syserr_in);
+              int npixon_in, double sigmad_in, double taud_in, double syserr_in,
+              int ipositive_in=0, double sensitivity_in=1.0);
     ~PixonDRW();
     void compute_cont(const double *x);
     void compute_rm_pixon(const double *x);

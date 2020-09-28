@@ -330,6 +330,11 @@ void Data::load(const string& fname)
   
   /* first determine number of lines */
   fin.open(fname);
+  if(!fin.good())
+  {
+    cout<<fname<<" does not exist!"<<endl;
+    exit(0);
+  }
   i = 0;
   while(1)
   {

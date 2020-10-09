@@ -97,6 +97,12 @@ int run(Config &cfg)
       pixon_function = PixonBasis::tophat;
       pixon_norm = PixonBasis::tophat_norm;
       break;
+
+    case 6: 
+      pixon_sub_factor = 1; /* enforce to 1 */
+      pixon_function = PixonBasis::wendland;
+      pixon_norm = PixonBasis::wendland_norm;
+      break;
     
     default:  /* default */
       PixonBasis::norm_gaussian = sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0));

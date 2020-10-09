@@ -101,6 +101,8 @@ class PixonBasis
     static double triangle_norm(double psize);
     static double lorentz(double x, double y, double psize);
     static double lorentz_norm(double psize);
+    static double wendland(double x, double y, double psize);
+    static double wendland_norm(double psize);
     static string pixonbasis_name[];
 };
 

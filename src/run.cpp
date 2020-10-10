@@ -116,8 +116,9 @@ int run(Config &cfg)
    * resp_uniform.txt, resp.txt
    * line_rec_uniform.txt line_rec.txt 
    */
+  npixon = npixon0;
   run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-  npixon = fmax(10, fmin(npixon+10, npixon0));
+  npixon = npixon0;
   run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   
   /* continuum free with pixon, line with pixon 
@@ -125,9 +126,9 @@ int run(Config &cfg)
    * line_rec_pixon_uniform.txt, line_rec_pixon.txt
    * con_pixon_rm_uniform.txt, con_pixon_rm.txt
    */
-  npixon = fmax(10, fmin(npixon+10, npixon0));
+  npixon = npixon0;
   run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-  npixon = fmax(10, fmin(npixon+10, npixon0));
+  npixon = npixon0;
   run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   
   /* continuum free with drw, line with pixon 
@@ -135,9 +136,9 @@ int run(Config &cfg)
    * line_rec_drw_uniform.txt, line_rec_drw.txt
    * con_drw_rm_uniform.txt, con_drw_rm.txt
    */
-  npixon = fmax(10, fmin(npixon+10, npixon0));
+  npixon = npixon0;
   run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
-  npixon = fmax(10, fmin(npixon+10, npixon0));
+  npixon = npixon0;
   run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
 
   delete[] pimg;
@@ -235,18 +236,6 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
     rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
-    
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<ndim; i++)
-      {
-        if(x[i] < low[i])
-          x[i] = low[i];
-        else if(x[i] > up[i])
-          x[i] = up[i];
-      }
-      opt0.optimize(x, f);
-    }
     
     pixon.compute_rm_pixon(x.data());
     chisq = pixon.compute_chisquare(x.data());
@@ -390,18 +379,6 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<ndim; i++)
-      {
-        if(x[i] < low[i])
-          x[i] = low[i];
-        else if(x[i] > up[i])
-          x[i] = up[i];
-      }
-      opt0.optimize(x, f);
-    }
-    
     pixon.compute_rm_pixon(x.data());
     chisq = pixon.compute_chisquare(x.data());
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
@@ -541,18 +518,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<cont_recon.size; i++)
-      {
-        if(x_cont[i] < low_cont[i])
-          x_cont[i] = low_cont[i];
-        else if(x_cont[i] > up_cont[i])
-          x_cont[i] = up_cont[i];
-      }
-      opt0.optimize(x_cont, f);
-    }
-    
     pixon.compute_cont(x_cont.data());
     chisq = pixon.compute_chisquare_cont(x_cont.data());
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
@@ -676,18 +641,6 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
     rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
-    
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<ndim; i++)
-      {
-        if(x[i] < low[i])
-          x[i] = low[i];
-        else if(x[i] > up[i])
-          x[i] = up[i];
-      }
-      opt1.optimize(x, f);
-    }
     
     pixon.compute_rm_pixon(x.data());
     chisq = pixon.compute_chisquare(x.data());
@@ -817,18 +770,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<cont_recon.size; i++)
-      {
-        if(x_cont[i] < low_cont[i])
-          x_cont[i] = low_cont[i];
-        else if(x_cont[i] > up_cont[i])
-          x_cont[i] = up_cont[i];
-      }
-      opt0.optimize(x_cont, f);
-    }
-    
     pixon.compute_cont(x_cont.data());
     chisq = pixon.compute_chisquare_cont(x_cont.data());
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
@@ -947,18 +888,6 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
     rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
-    
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<ndim; i++)
-      {
-        if(x[i] < low[i])
-          x[i] = low[i];
-        else if(x[i] > up[i])
-          x[i] = up[i];
-      }
-      opt1.optimize(x, f);
-    }
     
     pixon.compute_rm_pixon(x.data());
     chisq = pixon.compute_chisquare(x.data());
@@ -1110,18 +1039,6 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<ndim; i++)
-      {
-        if(x[i] < low[i])
-          x[i] = low[i];
-        else if(x[i] > up[i])
-          x[i] = up[i];
-      }
-      opt0.optimize(x, f);
-    }
-    
     pixon.compute_rm_pixon(x.data());
     chisq = pixon.compute_chisquare(x.data());
     cout<<f<<"  "<<num<<"  "<<chisq<<endl;
@@ -1261,18 +1178,6 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
     rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
-    
-    if(rc <0 || rc > 3)
-    {
-      for(i=0; i<ndim; i++)
-      {
-        if(x[i] < low[i])
-          x[i] = low[i];
-        else if(x[i] > up[i])
-          x[i] = up[i];
-      }
-      opt0.optimize(x, f);
-    }
     
     pixon.compute_rm_pixon(x.data());
     chisq = pixon.compute_chisquare(x.data());

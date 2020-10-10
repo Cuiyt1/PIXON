@@ -708,6 +708,16 @@ double ** matrix_malloc(int n1, int n2)
   return mat;
 }
 
+/* used for sorting */
+int compare(const void* a, const void* b)
+{
+	if (*(double *)a > *(double *)b)
+		return 1;
+	else if (*(double *)a > *(double *)b)
+		return -1;
+	return 0;
+}
+
 /*!
  * This function allocates memory for array.
  */

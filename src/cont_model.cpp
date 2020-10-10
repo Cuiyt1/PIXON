@@ -362,8 +362,8 @@ void ContModel::get_best_params()
   }
   printf("# Number of points in posterior sample: %d\n", num_ps);
 
-  post_model = new double[num_params*sizeof(double)];
-  posterior_sample = new double[num_ps * num_params*sizeof(double)];
+  post_model = new double[num_params];
+  posterior_sample = new double[num_ps * num_params];
   
   for(i=0; i<num_ps; i++)
   {
@@ -415,6 +415,21 @@ void ContModel::get_best_params()
   for(j = 0; j<num_params; j++)
     printf("Best params %d %f +- %f\n", j, *((double *)best_params + j), 
                                            *((double *)best_params_std + j) ); 
+  
+  /* calculate the median values */
+  double *param_buf;
+  param_buf = new double [num_ps];
+  for(j=0; j<num_params; j++)
+  {
+    for(i=0; i<num_ps; i++)
+    {
+      param_buf[i] = *((double *)posterior_sample + i*num_params + j );
+    }
+    qsort(param_buf, num_ps, sizeof(double), compare);
+    *((double *)best_params + j) = param_buf[j];
+  }
+
+  delete[] param_buf;
   delete[] post_model;
   delete[] posterior_sample;
 }

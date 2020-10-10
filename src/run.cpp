@@ -53,11 +53,18 @@ int run(Config &cfg)
   pixon_sub_factor = cfg.pixon_sub_factor;
   pixon_size_factor = cfg.pixon_size_factor;
   pixon_map_low_bound = cfg.pixon_map_low_bound;
-  npixon0 = npixon = cfg.npixon_max*pixon_sub_factor/pixon_size_factor;
+  npixon0 = cfg.npixon_max*pixon_sub_factor/pixon_size_factor;
 
+  /* number of pixels */
   npixel = (cfg.tau_range_up - cfg.tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
+
+  /* index at which positive lags starts */
   ipositive_tau = (0.0 - cfg.tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
+
+  /* used to restore image  */
   pimg = new double[npixel+1+cont_model->cont_recon.size+1];
+
+  /* setup pixon type */
   switch(cfg.pixon_type)
   {
     case 0:  /* Gaussian */

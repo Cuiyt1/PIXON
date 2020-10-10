@@ -149,6 +149,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_drw..."<<endl;
+  cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   bool flag;
   PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
@@ -307,6 +308,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_drw_uniform..."<<endl;
+  cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   bool flag;
   PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
@@ -471,6 +473,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_pixon..."<<endl;
+  cout<<"npixon:"<<npixon<<endl;
   bool flag;
   int i, iter;
   int npixon_cont = 10;
@@ -747,6 +750,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_cont_pixon_uniform..."<<endl;
+  cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   int npixon_cont = 10;
   PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, cfg.sensitivity);
@@ -1025,6 +1029,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_pixon..."<<endl;
+  cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
@@ -1181,6 +1186,7 @@ void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& np
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_uniform..."<<endl;
+  cout<<"npixon:"<<npixon<<endl;
   int i;
   Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;

@@ -26,8 +26,6 @@ using namespace std;
 
 int run(Config &cfg)
 {
-  double sigmad, taud, syserr;
-
   Data cont, line;
   cont.load(cfg.fcon);  /* load cont data */
   line.load(cfg.fline); /* load line data */
@@ -37,6 +35,9 @@ int run(Config &cfg)
   double text_rec = 0.1 * (cont.time[cont.size-1] - cont.time[0]);
   double tback = fmax(cont.time[0] - (line.time[0] - cfg.tau_range_up), text_rec);
   double tforward = fmax((line.time[line.size-1] - cfg.tau_range_low) - cont.time[cont.size-1], text_rec);
+  double sigmad, taud, syserr;
+
+  /* use drw to reconstruct continuum */
   cont_model = new ContModel(cont, tback, tforward, cfg.dt_rec);
   cont_model->mcmc();
   cont_model->get_best_params();
@@ -74,7 +75,7 @@ int run(Config &cfg)
       pixon_norm = PixonBasis::gaussian_norm;
       break;
     
-    case 1:
+    case 1: /* modified Gaussian */
       PixonBasis::coeff1_modified_gaussian = exp(-0.5 * pixon_size_factor*3.0*pixon_size_factor*3.0);
       PixonBasis::coeff2_modified_gaussian = 1.0 - PixonBasis::coeff1_modified_gaussian;
       PixonBasis::norm_gaussian = (sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0)) 
@@ -105,7 +106,7 @@ int run(Config &cfg)
       pixon_norm = PixonBasis::tophat_norm;
       break;
 
-    case 6: 
+    case 6: /* Wendland */
       pixon_sub_factor = 1; /* enforce to 1 */
       pixon_function = PixonBasis::wendland;
       pixon_norm = PixonBasis::wendland_norm;

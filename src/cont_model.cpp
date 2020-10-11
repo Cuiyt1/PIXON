@@ -427,6 +427,7 @@ void ContModel::get_best_params()
     }
     qsort(param_buf, num_ps, sizeof(double), compare);
     *((double *)best_params + j) = param_buf[j];
+    printf("meidan: %f\n", param_buf[j]);
   }
 
   delete[] param_buf;

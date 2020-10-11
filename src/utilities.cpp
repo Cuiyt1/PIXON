@@ -125,7 +125,7 @@ void Config::print_cfg()
   fout<<setw(24)<<left<<"tau_range_low"<<" = "<<tau_range_low<<endl;
   fout<<setw(24)<<left<<"tau_range_up"<<" = "<<tau_range_up<<endl;
   fout<<setw(24)<<left<<"dt_rec"<<" = "<<dt_rec<<endl;
-  fout<<setw(24)<<left<<"fix_bg"<<" = "<<fix_bg<<endl;
+  fout<<setw(24)<<left<<boolalpha<<"fix_bg"<<" = "<<fix_bg<<endl;
   fout<<setw(24)<<left<<"bg"<<" = "<<bg<<endl;
   fout<<setw(24)<<left<<"tol"<<" = "<<tol<<endl;
   fout<<setw(24)<<left<<"nfeval_max"<<" = "<<nfeval_max<<endl;

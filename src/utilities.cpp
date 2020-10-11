@@ -145,7 +145,7 @@ double PixonBasis::coeff1_modified_gaussian = exp(-0.5*9.0);
 double PixonBasis::coeff2_modified_gaussian =(1.0 - exp(-0.5*9.0));
 double PixonBasis::norm_modified_gaussian= (sqrt(2*M_PI) * erf(3.0/sqrt(2.0)) - 2*3.0*exp(-0.5*9.0))/PixonBasis::coeff2_modified_gaussian;
 
-string PixonBasis::pixonbasis_name[] = {"Gaussian", "modified Gaussian", "Lorentz", "parabloid", "triangle","top-hat", "Wendland"};
+string PixonBasis::pixonbasis_name[] = {"parabloid", "Gaussian", "modified Gaussian", "Lorentz", "Wendland", "triangle","top-hat"};
 
 /* modified gaussian function, truncated at factor * psize */
 double PixonBasis::gaussian(double x, double y, double psize)
@@ -232,7 +232,7 @@ double PixonBasis::wendland(double x, double y, double psize)
 }
 double PixonBasis::wendland_norm(double psize)
 {
-  return 1.5*psize;
+  return 1.5/psize;
 }
 /*==================================================================*/
 /* class Data */

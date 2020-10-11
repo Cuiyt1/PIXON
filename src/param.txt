@@ -2,16 +2,16 @@
 #
 #=============================================
 # pixon type, 
-# 0: Gaussian; 1: modified Gaussian; 2: Lorentz; 
-# 3: parabloid; 4: triangle; 5: top-hat
+# 0: parabloid; 1: Gaussian; 2: modified Gaussian; 
+# 3: Lorentz; 4: Wendland; 5: triangle; 6: top-hat
 #=============================================
-pixon_type        = 3
+pixon_type        = 0
 
 #=============================================
 #  file name for continuum and emission line
 #=============================================
-fcon              = data/ngc5548_1367.txt
-fline             = data/ngc5548_U.txt
+fcon              = data/con.txt
+fline             = data/line.txt
 
 #=============================================
 # range of time delay of transfer function

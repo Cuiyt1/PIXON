@@ -68,14 +68,19 @@ int run(Config &cfg)
   /* setup pixon type */
   switch(cfg.pixon_type)
   {
-    case 0:  /* Gaussian */
+    case 0:  /* parabloid */      
+      pixon_function = PixonBasis::parabloid;
+      pixon_norm = PixonBasis::parabloid_norm;
+      break;
+
+    case 1:  /* Gaussian */
       PixonBasis::norm_gaussian = sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0));
 
       pixon_function = PixonBasis::gaussian;
       pixon_norm = PixonBasis::gaussian_norm;
       break;
     
-    case 1: /* modified Gaussian */
+    case 2: /* modified Gaussian */
       PixonBasis::coeff1_modified_gaussian = exp(-0.5 * pixon_size_factor*3.0*pixon_size_factor*3.0);
       PixonBasis::coeff2_modified_gaussian = 1.0 - PixonBasis::coeff1_modified_gaussian;
       PixonBasis::norm_gaussian = (sqrt(2.0*M_PI) * erf(3.0*pixon_size_factor/sqrt(2.0)) 
@@ -85,31 +90,25 @@ int run(Config &cfg)
       pixon_norm = PixonBasis::modified_gaussian_norm;
       break;
     
-    case 2:  /* Lorentz */ 
+    case 3:  /* Lorentz */ 
       pixon_function = PixonBasis::lorentz;
       pixon_norm = PixonBasis::lorentz_norm;
       break;
-
-    case 3:  /* parabloid */      
-      pixon_function = PixonBasis::parabloid;
-      pixon_norm = PixonBasis::parabloid_norm;
+    
+    case 4: /* Wendland */
+      pixon_function = PixonBasis::wendland;
+      pixon_norm = PixonBasis::wendland_norm;
       break;
     
-    case 4:  /* triangle */ 
+    case 5:  /* triangle */ 
       pixon_function = PixonBasis::triangle;
       pixon_norm = PixonBasis::triangle_norm;
       break;
     
-    case 5:  /* top-hat */ 
+    case 6:  /* top-hat */ 
       pixon_sub_factor = 1; /* enforce to 1 */
       pixon_function = PixonBasis::tophat;
       pixon_norm = PixonBasis::tophat_norm;
-      break;
-
-    case 6: /* Wendland */
-      pixon_sub_factor = 1; /* enforce to 1 */
-      pixon_function = PixonBasis::wendland;
-      pixon_norm = PixonBasis::wendland_norm;
       break;
     
     default:  /* default */

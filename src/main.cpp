@@ -33,7 +33,7 @@ int main(int argc, char ** argv)
   }
   
   config.print_cfg();
-  cout<<"Pixon type: "<<config.pixon_type<<", "<<PixonBasis::pixonbasis_name[config.pixon_type]<<endl;
+  cout<<"Pixon basis type: "<<config.pixon_basis_type<<", "<<PixonBasis::pixonbasis_name[config.pixon_basis_type]<<endl;
   
   run(config);
 

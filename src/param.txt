@@ -1,11 +1,11 @@
 # lines starting with "#" are regarded as comments.
 #
 #=============================================
-# pixon type, 
+# pixon basis type, 
 # 0: parabloid; 1: Gaussian; 2: modified Gaussian; 
 # 3: Lorentz; 4: Wendland; 5: triangle; 6: top-hat
 #=============================================
-pixon_type        = 0
+pixon_basis_type        = 0
 
 #=============================================
 #  file name for continuum and emission line

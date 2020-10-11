@@ -24,7 +24,7 @@ using namespace std;
 /* class configuration */
 Config::Config()
 {
-  pixon_type = 0;
+  pixon_basis_type = 0;
 
   fix_bg = false;
   bg = 0.0;
@@ -48,9 +48,9 @@ void Config::load_cfg(string fname)
 	param.parse(is);
   //param.generate(std::cout);
 
-  if(!configparser::extract(param.sections["param"]["pixon_type"], pixon_type))
+  if(!configparser::extract(param.sections["param"]["pixon_basis_type"], pixon_basis_type))
   {
-    pixon_type = 0;
+    pixon_basis_type = 0;
   }
   configparser::extract(param.sections["param"]["fcon"], fcon);
   if(fcon.empty())
@@ -119,7 +119,7 @@ void Config::print_cfg()
 {
   ofstream fout;
   fout.open("data/param_input");
-  fout<<setw(24)<<left<<"pixon_type"<<" = "<<pixon_type<<endl;
+  fout<<setw(24)<<left<<"pixon_basis_type"<<" = "<<pixon_basis_type<<endl;
   fout<<setw(24)<<left<<"fcon"<<" = "<<fcon<<endl;
   fout<<setw(24)<<left<<"fline"<<" = "<<fline<<endl;
   fout<<setw(24)<<left<<"tau_range_low"<<" = "<<tau_range_low<<endl;

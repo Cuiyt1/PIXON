@@ -55,8 +55,8 @@ class Config
     bool fix_bg;
     double bg;
 
-    /* pixon type */
-    int pixon_type;
+    /* pixon basis type */
+    int pixon_basis_type;
 
     /* data file */
     string fcon;

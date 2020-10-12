@@ -119,34 +119,41 @@ int run(Config &cfg)
       break;
   }
   
-  /* continuum fixed with drw, line with pixon 
-   * resp_contfix_uniform.txt, resp_contfix.txt
-   * line_contfix_uniform.txt line_contfix.txt 
-   */
-  npixon = npixon0;
-  run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-  npixon = npixon0;
-  run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-  
-  /* continuum free with pixon, line with pixon 
-   * resp_pixon_uniform.txt, resp_pixon.txt
-   * line_pixon_uniform.txt, line_pixon.txt
-   * con_pixon_uniform.txt, con_pixon.txt
-   */
-  npixon = npixon0;
-  run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-  npixon = npixon0;
-  run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-  
-  /* continuum free with drw, line with pixon 
-   * resp_drw_uniform.txt, resp_drw.txt
-   * line_drw_uniform.txt, line_drw.txt
-   * con_drw_uniform.txt, con_drw.txt
-   */
-  npixon = npixon0;
-  run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
-  npixon = npixon0;
-  run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
+  if(cfg.drv_lc_model == 0 || cfg.drv_lc_model == 3)
+  {
+    /* continuum free with pixon, line with pixon 
+     * resp_pixon_uniform.txt, resp_pixon.txt
+     * line_pixon_uniform.txt, line_pixon.txt
+     * con_pixon_uniform.txt, con_pixon.txt
+     */
+    npixon = npixon0;
+    run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    npixon = npixon0;
+    run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+  }
+  if(cfg.drv_lc_model == 1 || cfg.drv_lc_model == 3)
+  {
+    /* continuum free with drw, line with pixon 
+     * resp_drw_uniform.txt, resp_drw.txt
+     * line_drw_uniform.txt, line_drw.txt
+     * con_drw_uniform.txt, con_drw.txt
+     */
+    npixon = npixon0;
+    run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
+    npixon = npixon0;
+    run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
+  }
+  if(cfg.drv_lc_model == 2 || cfg.drv_lc_model == 3)
+  {
+    /* continuum fixed with drw, line with pixon 
+     * resp_contfix_uniform.txt, resp_contfix.txt
+     * line_contfix_uniform.txt line_contfix.txt 
+     */
+    npixon = npixon0;
+    run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    npixon = npixon0;
+    run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+  }
 
   delete[] pimg;
   return 0;

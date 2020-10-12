@@ -507,7 +507,7 @@ void ContModel::recon()
   }
 
   ofstream fout;
-  fout.open("data/con_recon_drw.txt");
+  fout.open("data/cont_recon_drw.txt");
   for(i=0; i<cont_recon.size; i++)
   {
     fout<<cont_recon.time[i]<<"  "<<cont_recon.flux[i]*cont_recon.norm<<"   "<<cont_recon.error[i]*cont_recon.norm<<endl;
@@ -591,7 +591,7 @@ void ContModel::recon(const void *model)
   }
 
   ofstream fout;
-  fout.open("data/con_recon_drw.txt");
+  fout.open("data/cont_recon_drw.txt");
   for(i=0; i<cont_recon.size; i++)
   {
     fout<<cont_recon.time[i]<<"  "<<cont_recon.flux[i]<<"   "<<cont_recon.error[i]<<endl;

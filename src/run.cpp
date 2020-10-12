@@ -124,7 +124,7 @@ int run(Config &cfg)
     /* continuum free with pixon, line with pixon 
      * resp_pixon_uniform.txt, resp_pixon.txt
      * line_pixon_uniform.txt, line_pixon.txt
-     * con_pixon_uniform.txt, con_pixon.txt
+     * cont_pixon_uniform.txt, cont_pixon.txt
      */
     npixon = npixon0;
     run_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
@@ -136,7 +136,7 @@ int run(Config &cfg)
     /* continuum free with drw, line with pixon 
      * resp_drw_uniform.txt, resp_drw.txt
      * line_drw_uniform.txt, line_drw.txt
-     * con_drw_uniform.txt, con_drw.txt
+     * cont_drw_uniform.txt, cont_drw.txt
      */
     npixon = npixon0;
     run_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
@@ -163,7 +163,7 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
                     int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
-  cout<<"Start run_cont_drw..."<<endl;
+  cout<<"Start run_drw..."<<endl;
   cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   bool flag;
@@ -295,7 +295,7 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
   }
   fout.close();
   
-  fname = "data/con_drw.txt_" + to_string(cfg.pixon_basis_type);
+  fname = "data/cont_drw.txt_" + to_string(cfg.pixon_basis_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -310,7 +310,7 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
                   int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
-  cout<<"Start run_cont_drw_uniform..."<<endl;
+  cout<<"Start run_drw_uniform..."<<endl;
   cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   bool flag;
@@ -447,7 +447,7 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   }
   fout.close();
 
-  fname = "data/con_drw_uniform.txt_" + to_string(cfg.pixon_basis_type);
+  fname = "data/cont_drw_uniform.txt_" + to_string(cfg.pixon_basis_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -463,7 +463,7 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
                     int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
-  cout<<"Start run_cont_pixon..."<<endl;
+  cout<<"Start run_pixon..."<<endl;
   cout<<"npixon:"<<npixon<<endl;
   bool flag;
   int i, iter;
@@ -559,7 +559,7 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   
   pixon.compute_cont(x_old_cont.data());
   ofstream fp;
-  fp.open("data/con_recon_pixon.txt");
+  fp.open("data/cont_recon_pixon.txt");
   for(i=0; i<cont_recon.size; i++)
   {
     fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
@@ -700,7 +700,7 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   }
   fout.close();
   
-  fname = "data/con_pixon.txt_" + to_string(cfg.pixon_basis_type);
+  fname = "data/cont_pixon.txt_" + to_string(cfg.pixon_basis_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -716,7 +716,7 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
                             int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
-  cout<<"Start run_cont_pixon_uniform..."<<endl;
+  cout<<"Start run_pixon_uniform..."<<endl;
   cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   int npixon_cont = 10;
@@ -811,7 +811,7 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   
   pixon.compute_cont(x_old_cont.data());
   ofstream fp;
-  fp.open("data/con_recon_pixon_uniform.txt");
+  fp.open("data/cont_recon_pixon_uniform.txt");
   for(i=0; i<cont_recon.size; i++)
   {
     fp<<pixon.cont.time[i]<<" "<<pixon.image_cont[i]*pixon.cont.norm<<endl;
@@ -956,7 +956,7 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   }
   fout.close();
   
-  fname = "data/con_pixon_uniform.txt_" + to_string(cfg.pixon_basis_type);
+  fname = "data/cont_pixon_uniform.txt_" + to_string(cfg.pixon_basis_type);
   fp.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {
@@ -971,7 +971,7 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
 void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
-  cout<<"Start run_pixon..."<<endl;
+  cout<<"Start run_contfix..."<<endl;
   cout<<"npixon:"<<npixon<<endl;
   int i, iter;
   Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);
@@ -1116,7 +1116,7 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon, 
 void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
-  cout<<"Start run_uniform..."<<endl;
+  cout<<"Start run_contfix_uniform..."<<endl;
   cout<<"npixon:"<<npixon<<endl;
   int i;
   Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);

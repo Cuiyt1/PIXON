@@ -57,6 +57,11 @@ class Config
 
     /* pixon basis type */
     int pixon_basis_type;
+    /* pixon uniform or fractal */
+    bool pixon_uniform;
+
+    /* driving lc model */
+    int drv_lc_model;
 
     /* data file */
     string fcon;
@@ -65,7 +70,7 @@ class Config
     /* transfer function */
     double tau_range_low;
     double tau_range_up;
-    double dt_rec;
+    double tau_interval;
 
     /* fitting tolrence*/
     double tol;

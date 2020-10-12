@@ -38,7 +38,7 @@ int run(Config &cfg)
   double sigmad, taud, syserr;
 
   /* use drw to reconstruct continuum */
-  cont_model = new ContModel(cont, tback, tforward, cfg.dt_rec);
+  cont_model = new ContModel(cont, tback, tforward, cfg.tau_interval);
   cont_model->mcmc();
   cont_model->get_best_params();
   cont_model->recon();

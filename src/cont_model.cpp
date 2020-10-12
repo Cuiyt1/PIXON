@@ -176,7 +176,7 @@ ContModel::ContModel()
 
   dnest_free_fptrset(fptrset);
 }
-ContModel::ContModel(Data& cont_in, double tback, double tforward, double dt_rec)
+ContModel::ContModel(Data& cont_in, double tback, double tforward, double tau_interval)
   :cont(cont_in)
 {
   int i;
@@ -187,7 +187,7 @@ ContModel::ContModel(Data& cont_in, double tback, double tforward, double dt_rec
   int n;
   double dt = (cont.time[cont.size-1] - cont.time[0])/(cont.size-1);
 
-  dt = fmin(dt, dt_rec);
+  dt = fmin(dt, tau_interval);
   n = (cont.time[cont.size - 1] + tforward - (cont.time[0] - tback))/dt;
   cout<<"size: "<<n<<endl;
   cont_recon.set_size(n);

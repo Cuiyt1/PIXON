@@ -25,6 +25,8 @@ using namespace std;
 Config::Config()
 {
   pixon_basis_type = 0;
+  pixon_uniform = true;
+  drv_lc_model = 0;
 
   fix_bg = false;
   bg = 0.0;
@@ -52,6 +54,14 @@ void Config::load_cfg(string fname)
   {
     pixon_basis_type = 0;
   }
+  if(!configparser::extract(param.sections["param"]["pixon_uniform"], pixon_uniform))
+  {
+    pixon_uniform = true;
+  }
+  if(!configparser::extract(param.sections["param"]["drv_lc_model"], drv_lc_model))
+  {
+    drv_lc_model = 0;
+  }
   configparser::extract(param.sections["param"]["fcon"], fcon);
   if(fcon.empty())
   {
@@ -74,9 +84,9 @@ void Config::load_cfg(string fname)
   {
     tau_range_up = 10.0;
   }
-  if(!configparser::extract(param.sections["param"]["dt_rec"], dt_rec))
+  if(!configparser::extract(param.sections["param"]["tau_interval"], tau_interval))
   {
-    dt_rec = 1.0;
+    tau_interval = 1.0;
   }
   if(!configparser::extract(param.sections["param"]["fix_bg"], fix_bg))
   {
@@ -120,11 +130,13 @@ void Config::print_cfg()
   ofstream fout;
   fout.open("data/param_input");
   fout<<setw(24)<<left<<"pixon_basis_type"<<" = "<<pixon_basis_type<<endl;
+  fout<<setw(24)<<left<<boolalpha<<"pixon_uniform"<<" = "<<pixon_uniform<<endl;
+  fout<<setw(24)<<left<<"drv_lc_model"<<" = "<<drv_lc_model<<endl;
   fout<<setw(24)<<left<<"fcon"<<" = "<<fcon<<endl;
   fout<<setw(24)<<left<<"fline"<<" = "<<fline<<endl;
   fout<<setw(24)<<left<<"tau_range_low"<<" = "<<tau_range_low<<endl;
   fout<<setw(24)<<left<<"tau_range_up"<<" = "<<tau_range_up<<endl;
-  fout<<setw(24)<<left<<"dt_rec"<<" = "<<dt_rec<<endl;
+  fout<<setw(24)<<left<<"tau_interval"<<" = "<<tau_interval<<endl;
   fout<<setw(24)<<left<<boolalpha<<"fix_bg"<<" = "<<fix_bg<<endl;
   fout<<setw(24)<<left<<"bg"<<" = "<<bg<<endl;
   fout<<setw(24)<<left<<"tol"<<" = "<<tol<<endl;

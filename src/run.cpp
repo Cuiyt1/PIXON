@@ -127,9 +127,9 @@ int run(Config &cfg)
      * con_pixon_uniform.txt, con_pixon.txt
      */
     npixon = npixon0;
-    run_cont_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    run_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
     npixon = npixon0;
-    run_cont_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    run_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   }
   if(cfg.drv_lc_model == 1 || cfg.drv_lc_model == 3)
   {
@@ -139,9 +139,9 @@ int run(Config &cfg)
      * con_drw_uniform.txt, con_drw.txt
      */
     npixon = npixon0;
-    run_cont_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
+    run_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
     npixon = npixon0;
-    run_cont_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
+    run_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
   }
   if(cfg.drv_lc_model == 2 || cfg.drv_lc_model == 3)
   {
@@ -150,16 +150,16 @@ int run(Config &cfg)
      * line_contfix_uniform.txt line_contfix.txt 
      */
     npixon = npixon0;
-    run_pixon_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    run_contfix_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
     npixon = npixon0;
-    run_pixon(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    run_contfix(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
   }
 
   delete[] pimg;
   return 0;
 }
 
-void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
+void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
                     int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
@@ -306,7 +306,7 @@ void run_cont_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, i
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
-void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
+void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
                   int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
@@ -459,7 +459,7 @@ void run_cont_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double 
 }
 
 /* set continuum free and use pixons to model continuum, pixel-dependent pixon sizes for RM */
-void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
+void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
                     int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
@@ -712,7 +712,7 @@ void run_cont_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg,
 }
 
 /* set continuum free and use pixons to model continuum, uniform pixon sizes for RM */
-void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, 
+void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, 
                             int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
@@ -968,7 +968,7 @@ void run_cont_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, doubl
 }
 
 /* set continuum fixed from a drw reconstruction and use pixel dependent pixon sizes for RM */
-void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
+void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_pixon..."<<endl;
@@ -1113,7 +1113,7 @@ void run_pixon(Data& cont, Data& line, double *pimg, int npixel, int& npixon, in
 }
 
 /* set continuum fixed from a drw reconstruction and use uniform pixon sizes for RM */
-void run_pixon_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
+void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_uniform..."<<endl;

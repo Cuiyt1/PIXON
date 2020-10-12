@@ -13,7 +13,7 @@ pixon_uniform     = true
 
 #=============================================
 # driving light curve model
-# 0: pixon; 1: drw
+# 0: pixon; 1: drw; 2: contfix; 3: all
 drv_lc_model          = 0
 
 #=============================================

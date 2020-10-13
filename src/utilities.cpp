@@ -123,6 +123,11 @@ void Config::load_cfg(string fname)
     sensitivity = 10;
   }
   pixon_map_low_bound = pixon_sub_factor - 1;
+
+  if(drv_lc_model < 0 || drv_lc_model > 3)
+  {
+    cout<<"Incorrect configuration drv_lc_model."<<endl;
+  }
 }
 
 void Config::print_cfg()

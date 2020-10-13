@@ -439,7 +439,7 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   }
   fout.close();
 
-  fname = "data/line_drw_full_uniform.txt_" + to_string(cfg.pixon_basis_type);
+  fname = "data/line_drw_uniform_full.txt_" + to_string(cfg.pixon_basis_type);
   fout.open(fname);
   for(i=0; i<pixon.cont.size; i++)
   {

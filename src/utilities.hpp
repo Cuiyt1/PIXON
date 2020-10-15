@@ -60,11 +60,11 @@ class Config
     /* pixon uniform or fractal */
     bool pixon_uniform;
 
-    /* driving lc model */
+    /* driving lc model: pixon or drw */
     int drv_lc_model;
 
     /* data file */
-    string fcon;
+    string fcont;
     string fline;
 
     /* transfer function */
@@ -72,15 +72,20 @@ class Config
     double tau_range_up;
     double tau_interval;
 
-    /* fitting tolrence*/
+    /* fitting tolrence */
     double tol;
+    /* maximum number of function evaluations */
     int nfeval_max;
 
     /* pixon config */
+    /* extension of pixon in term of pixon size */
     int pixon_size_factor;
+    /* sub-resolution of pixon size */
     int pixon_sub_factor;
+    /* low bound of pixon size */
     int pixon_map_low_bound;
-    int npixon_max;
+    /* maximum pixon size */
+    int max_pixon_size;
     double sensitivity;
 };
 

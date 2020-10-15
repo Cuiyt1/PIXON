@@ -19,11 +19,11 @@ for key in config["dump"].keys():
 plt.rc("text", usetex=True)
 plt.rc('font', family='serif', size=15)
 
-con = np.loadtxt(basename(config["dump"]["fcon"]))
+cont = np.loadtxt(basename(config["dump"]["fcont"]))
 line = np.loadtxt(basename(config["dump"]["fline"]))
-offset = np.mean(line[:, 1]) - np.std(line[:, 1]) - (np.mean(con[:, 1]) - np.std(con[:, 1]))
-tlim1 = np.min((con[0, 0], line[0, 0]))
-tlim2 = np.max((con[-1,0], line[-1, 0]))
+offset = np.mean(line[:, 1]) - np.std(line[:, 1]) - (np.mean(cont[:, 1]) - np.std(cont[:, 1]))
+tlim1 = np.min((cont[0, 0], line[0, 0]))
+tlim2 = np.max((cont[-1,0], line[-1, 0]))
 tspan=tlim2-tlim1
 #resp_input = np.loadtxt("resp_input.txt")
 
@@ -35,28 +35,28 @@ fig = plt.figure(figsize=(15, 15))
 for i, fn in enumerate(fnames):
 
   ax = fig.add_axes((0.1, 0.7-i*0.25, 0.5, 0.25))
-  ax.errorbar(con[:, 0], con[:, 1], yerr = con[:, 2], ls='none', marker='o', markersize=3, zorder=0)
+  ax.errorbar(cont[:, 0], cont[:, 1], yerr = cont[:, 2], ls='none', marker='o', markersize=3, zorder=0)
   ax.errorbar(line[:, 0], line[:, 1]-0.7*offset, yerr = line[:, 2], ls='none', marker='o', markersize=3, zorder=0)
   if i==0:
-   con_rec = np.loadtxt("cont_recon_drw.txt")
-   con_rec_uniform = con_rec
+   cont_rec = np.loadtxt("cont_recon_drw.txt")
+   cont_rec_uniform = cont_rec
    line_rec = np.loadtxt("line_contfix_full.txt_"+postfix)
    line_rec_uniform = np.loadtxt("line_contfix_uniform_full.txt_"+postfix)
    
   elif i==1:
-   con_rec = np.loadtxt("cont_pixon.txt_"+postfix)
-   con_rec_uniform = np.loadtxt("cont_pixon_uniform.txt_"+postfix)
+   cont_rec = np.loadtxt("cont_pixon.txt_"+postfix)
+   cont_rec_uniform = np.loadtxt("cont_pixon_uniform.txt_"+postfix)
    line_rec = np.loadtxt("line_pixon_full.txt_"+postfix)
    line_rec_uniform = np.loadtxt("line_pixon_uniform_full.txt_"+postfix)
    
   else:
-   con_rec = np.loadtxt("cont_drw.txt_"+postfix)
-   con_rec_uniform = np.loadtxt("cont_drw_uniform.txt_"+postfix)
+   cont_rec = np.loadtxt("cont_drw.txt_"+postfix)
+   cont_rec_uniform = np.loadtxt("cont_drw_uniform.txt_"+postfix)
    line_rec = np.loadtxt("line_drw_full.txt_"+postfix)
    line_rec_uniform = np.loadtxt("line_drw_uniform_full.txt_"+postfix)
   
-  ax.plot(con_rec[:, 0], con_rec[:, 1], lw=1, color='r',)
-  ax.plot(con_rec_uniform[:, 0], con_rec_uniform[:, 1],  lw=1, color='b')
+  ax.plot(cont_rec[:, 0], cont_rec[:, 1], lw=1, color='r',)
+  ax.plot(cont_rec_uniform[:, 0], cont_rec_uniform[:, 1],  lw=1, color='b')
   
   idx = np.where( (line_rec[:, 0] > line[0, 0] - 10) & (line_rec[:, 0] < line[-1, 0] + 10))
   ax.plot(line_rec[idx[0], 0], line_rec[idx[0], 1]-0.7*offset, lw=1, color='r')

@@ -19,7 +19,7 @@ drv_lc_model          = 0
 #=============================================
 #  file name for continuum and emission line
 #=============================================
-fcon              = data/cont.txt
+fcont              = data/cont.txt
 fline             = data/line.txt
 
 #=============================================
@@ -48,5 +48,5 @@ nfeval_max        = 10000
 #=============================================
 pixon_sub_factor  = 1
 pixon_size_factor = 1
-npixon_max        = 10
+max_pixon_size    = 10
 sensitivity       = 3

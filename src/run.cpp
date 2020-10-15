@@ -27,7 +27,7 @@ using namespace std;
 int run(Config &cfg)
 {
   Data cont, line;
-  cont.load(cfg.fcon);  /* load cont data */
+  cont.load(cfg.fcont);  /* load cont data */
   line.load(cfg.fline); /* load line data */
 
   /* continuum reconstruction */
@@ -54,7 +54,7 @@ int run(Config &cfg)
   pixon_sub_factor = cfg.pixon_sub_factor;
   pixon_size_factor = cfg.pixon_size_factor;
   pixon_map_low_bound = cfg.pixon_map_low_bound;
-  npixon0 = cfg.npixon_max*pixon_sub_factor/pixon_size_factor;
+  npixon0 = cfg.max_pixon_size*pixon_sub_factor/pixon_size_factor;
 
   /* number of pixels */
   npixel = (cfg.tau_range_up - cfg.tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);

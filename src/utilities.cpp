@@ -31,7 +31,7 @@ Config::Config()
   fix_bg = false;
   bg = 0.0;
 
-  fcon = "data/con.txt";
+  fcont = "data/con.txt";
   fline = "data/line.txt";
 
   pixon_size_factor = 1;
@@ -62,10 +62,10 @@ void Config::load_cfg(string fname)
   {
     drv_lc_model = 0;
   }
-  configparser::extract(param.sections["param"]["fcon"], fcon);
-  if(fcon.empty())
+  configparser::extract(param.sections["param"]["fcont"], fcont);
+  if(fcont.empty())
   {
-    cout<<"fcon is not defined!"<<endl;
+    cout<<"fcont is not defined!"<<endl;
     cout<<"exit!"<<endl;
     exit(0);
   }
@@ -114,9 +114,9 @@ void Config::load_cfg(string fname)
   {
     pixon_size_factor = 1;
   }
-  if(!configparser::extract(param.sections["param"]["npixon_max"], npixon_max))
+  if(!configparser::extract(param.sections["param"]["max_pixon_size"], max_pixon_size))
   {
-    npixon_max = 10;
+    max_pixon_size = 10;
   }
   if(!configparser::extract(param.sections["param"]["sensitivity"], sensitivity))
   {
@@ -137,7 +137,7 @@ void Config::print_cfg()
   fout<<setw(24)<<left<<"pixon_basis_type"<<" = "<<pixon_basis_type<<endl;
   fout<<setw(24)<<left<<boolalpha<<"pixon_uniform"<<" = "<<pixon_uniform<<endl;
   fout<<setw(24)<<left<<"drv_lc_model"<<" = "<<drv_lc_model<<endl;
-  fout<<setw(24)<<left<<"fcon"<<" = "<<fcon<<endl;
+  fout<<setw(24)<<left<<"fcont"<<" = "<<fcont<<endl;
   fout<<setw(24)<<left<<"fline"<<" = "<<fline<<endl;
   fout<<setw(24)<<left<<"tau_range_low"<<" = "<<tau_range_low<<endl;
   fout<<setw(24)<<left<<"tau_range_up"<<" = "<<tau_range_up<<endl;
@@ -149,7 +149,7 @@ void Config::print_cfg()
   fout<<setw(24)<<left<<"pixon_sub_factor"<<" = "<<pixon_sub_factor<<endl;
   fout<<setw(24)<<left<<"pixon_size_factor"<<" = "<<pixon_size_factor<<endl;
   fout<<setw(24)<<left<<"pixon_map_low_bound"<<" = "<<pixon_map_low_bound<<endl;
-  fout<<setw(24)<<left<<"npixon_max"<<" = "<<npixon_max<<endl;
+  fout<<setw(24)<<left<<"max_pixon_size"<<" = "<<max_pixon_size<<endl;
   fout<<setw(24)<<left<<"sensitivity"<<" = "<<sensitivity<<endl;
   fout.close();
 }

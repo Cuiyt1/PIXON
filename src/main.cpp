@@ -21,7 +21,7 @@ using namespace std;
 int main(int argc, char ** argv)
 {
   Config config; 
-  /* if input pixon type */
+  /* if input param file */
   if(argc >= 2)
   {
     config.load_cfg(argv[1]);

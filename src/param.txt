@@ -19,7 +19,7 @@ drv_lc_model          = 0
 #=============================================
 #  file name for continuum and emission line
 #=============================================
-fcon              = data/con.txt
+fcon              = data/cont.txt
 fline             = data/line.txt
 
 #=============================================

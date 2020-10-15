@@ -25,10 +25,10 @@ offset = np.mean(line[:, 1]) - np.std(line[:, 1]) - (np.mean(con[:, 1]) - np.std
 tlim1 = np.min((con[0, 0], line[0, 0]))
 tlim2 = np.max((con[-1,0], line[-1, 0]))
 tspan=tlim2-tlim1
-resp_input = np.loadtxt("resp_input.txt")
+#resp_input = np.loadtxt("resp_input.txt")
 
-fnames = ["", "_cont", "_drw"]
-postfix = config["dump"]["pixon_type"]
+fnames = ["_contfix", "_pixon", "_drw"]
+postfix = config["dump"]["pixon_basis_type"]
 
 fig = plt.figure(figsize=(15, 15))
 
@@ -38,22 +38,22 @@ for i, fn in enumerate(fnames):
   ax.errorbar(con[:, 0], con[:, 1], yerr = con[:, 2], ls='none', marker='o', markersize=3, zorder=0)
   ax.errorbar(line[:, 0], line[:, 1]-0.7*offset, yerr = line[:, 2], ls='none', marker='o', markersize=3, zorder=0)
   if i==0:
-   con_rec = np.loadtxt("con_recon.txt")
+   con_rec = np.loadtxt("cont_recon_drw.txt")
    con_rec_uniform = con_rec
-   line_rec = np.loadtxt("line_rec_full.txt_"+postfix)
-   line_rec_uniform = np.loadtxt("line_rec_full_uniform.txt_"+postfix)
+   line_rec = np.loadtxt("line_contfix_full.txt_"+postfix)
+   line_rec_uniform = np.loadtxt("line_contfix_uniform_full.txt_"+postfix)
    
   elif i==1:
-   con_rec = np.loadtxt("con_pixon_rm.txt_"+postfix)
-   con_rec_uniform = np.loadtxt("con_pixon_rm_uniform.txt_"+postfix)
-   line_rec = np.loadtxt("line_rec_full_cont.txt_"+postfix)
-   line_rec_uniform = np.loadtxt("line_rec_full_cont_uniform.txt_"+postfix)
+   con_rec = np.loadtxt("cont_pixon.txt_"+postfix)
+   con_rec_uniform = np.loadtxt("cont_pixon_uniform.txt_"+postfix)
+   line_rec = np.loadtxt("line_pixon_full.txt_"+postfix)
+   line_rec_uniform = np.loadtxt("line_pixon_uniform_full.txt_"+postfix)
    
   else:
-   con_rec = np.loadtxt("con_drw_rm.txt_"+postfix)
-   con_rec_uniform = np.loadtxt("con_drw_rm_uniform.txt_"+postfix)
-   line_rec = np.loadtxt("line_rec_full_drw.txt_"+postfix)
-   line_rec_uniform = np.loadtxt("line_rec_full_drw_uniform.txt_"+postfix)
+   con_rec = np.loadtxt("cont_drw.txt_"+postfix)
+   con_rec_uniform = np.loadtxt("cont_drw_uniform.txt_"+postfix)
+   line_rec = np.loadtxt("line_drw_full.txt_"+postfix)
+   line_rec_uniform = np.loadtxt("line_drw_uniform_full.txt_"+postfix)
   
   ax.plot(con_rec[:, 0], con_rec[:, 1], lw=1, color='r',)
   ax.plot(con_rec_uniform[:, 0], con_rec_uniform[:, 1],  lw=1, color='b')

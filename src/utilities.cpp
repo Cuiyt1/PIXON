@@ -193,8 +193,9 @@ double PixonBasis::modified_gaussian_norm(double psize)
 /* prarabloid function, truncated at factor * psize */
 double PixonBasis::parabloid(double x, double y, double psize)
 {
-  if(fabs(y-x) <= pixon_size_factor * psize)
-    return parabloid_norm(psize) * (1.0 - (y-x)*(y-x)/(pixon_size_factor*psize * pixon_size_factor*psize));
+  double d = fabs(y-x)/(pixon_size_factor * psize);
+  if( d <= 1.0)
+    return parabloid_norm(psize) * (1.0 - d*d);
   else 
     return 0.0;
 }
@@ -217,8 +218,9 @@ double PixonBasis::tophat_norm(double psize)
 
 double PixonBasis::triangle(double x, double y, double psize)
 {
-  if(fabs(y-x) <= pixon_size_factor * psize)
-    return triangle_norm(psize) * (1.0 - fabs(x-y)/(pixon_size_factor * psize));
+  double d = fabs(y-x)/(pixon_size_factor * psize);
+  if(d <= 1.0)
+    return triangle_norm(psize) * (1.0 - d);
   else 
     return 0.0;
 }
@@ -228,9 +230,9 @@ double PixonBasis::triangle_norm(double psize)
 }
 double PixonBasis::lorentz(double x, double y, double psize)
 {
-  if(fabs(y-x) <= pixon_size_factor * psize)
-    return lorentz_norm(psize) * ((pixon_size_factor/3.0 * psize) * (pixon_size_factor/3.0 * psize)) 
-           / ((x-y)*(x-y) + (pixon_size_factor/3.0 * psize) * (pixon_size_factor/3.0 * psize));
+  double d = fabs(y-x)/(psize);
+  if(d <= pixon_size_factor)
+    return lorentz_norm(psize) / (1.0 + d*d*3*3);
   else 
     return 0.0;
 }

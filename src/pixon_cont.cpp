@@ -82,7 +82,8 @@ void PixonCont::compute_rm_pixon(const double *x)
 {
   int i;
   double t;
-
+  
+  /* first npixel+1 entities are for transfer functions and bg, followed by continuum parameters */
   compute_cont(x + npixel + 1);
   rmfft.set_data(image_cont, cont.size);
   Pixon::compute_rm_pixon(x);
@@ -142,6 +143,7 @@ double PixonCont::compute_mem_cont(const double *x)
   return mem_cont;
 }
 
+/* compute pixon number of continuum */
 double PixonCont::compute_pixon_number_cont()
 {
   int i;
@@ -154,6 +156,12 @@ double PixonCont::compute_pixon_number_cont()
     num += pixon_norm(psize);
   }
   return num;
+}
+
+/* compute total pixon number */
+double PixonCont::compute_pixon_number()
+{
+  return compute_pixon_number_cont() + Pixon::compute_pixon_number();
 }
 
 void PixonCont::compute_chisquare_grad(const double *x)
@@ -186,7 +194,7 @@ void PixonCont::compute_chisquare_grad(const double *x)
     grad_chisq_cont[i] += grad_out * 2.0; /* chisq = chisq_cont + chisq_line */
   }
 }
-
+/* Kpixon = K((tj-ti)/psize) */
 double PixonCont::interp_Kpixon(double t)
 {
   int it;
@@ -201,6 +209,7 @@ double PixonCont::interp_Kpixon(double t)
   return Kpixon[it] + (Kpixon[it+1] - Kpixon[it])/dt * (t - (it-cont.size)*dt);
 }
 
+/* derivative of chisq_cont with respect to continuum */
 void PixonCont::compute_chisquare_grad_cont(const double *x)
 {
   int i, j, jt, jrange1, jrange2;
@@ -211,7 +220,7 @@ void PixonCont::compute_chisquare_grad_cont(const double *x)
   psize = pfft_cont.pixon_sizes[ipixon_cont];
   for(j=0; j<cont.size*2; j++)
   {
-    Kpixon[j] = pixon_function(j-cont.size, 0, psize);
+    Kpixon[j] = pixon_function(j-cont.size, 0, psize);  /* correspoding to time from -n*dt to +n*dt */
   }
   for(i=0; i<cont.size; i++)
   {

@@ -1040,6 +1040,7 @@ Pixon::~Pixon()
   }
 }
 
+/* interpolate image, note the negative time lags */
 double Pixon::interp_image(double t)
 {
   int it;
@@ -1252,6 +1253,9 @@ void Pixon::compute_chisquare_grad_pixon_up()
   }
 }
 
+/* calculate entropy gradient
+ *
+ */
 void Pixon::compute_mem_grad(const double *x)
 {
   double Itot, num, alpha, grad_in, psize, K;
@@ -1275,9 +1279,13 @@ void Pixon::compute_mem_grad(const double *x)
     }
     grad_mem[i] = 2.0 * alpha * pseudo_image[i] * grad_in / Itot;
   }
+  /* with respect to bg is zero */
   grad_mem[npixel] = 0.0;
 }
 
+/* calculate entropy gradient with respect to pixon size 
+ * when pixon size decreases
+ */
 void Pixon::compute_mem_grad_pixon_low()
 {
   double Itot, num, alpha, grad_in, psize, psize_low, K;
@@ -1299,6 +1307,9 @@ void Pixon::compute_mem_grad_pixon_low()
   }
 }
 
+/* calculate entropy gradient with respect to pixon size 
+ * when pixon size increases
+ */
 void Pixon::compute_mem_grad_pixon_up()
 {
   double Itot, num, alpha, grad_in, psize, psize_up, K;
@@ -1410,7 +1421,7 @@ bool Pixon::update_pixon_map()
       psize_low = pfft.pixon_sizes[pixon_map[i]-1];
       num = pixon_norm(psize);
       dnum_low = pixon_norm(psize_low) - num;
-      if( grad_pixon_low[i] + grad_mem_pixon_low[i] > dnum_low  * (1.0 + 10.0/sqrt(2.0*num)))
+      if( grad_pixon_low[i] + grad_mem_pixon_low[i] > dnum_low  * (1.0 + sensitivity/sqrt(2.0*num)))
       {
         reduce_pixon_map(i);
         pixon_map_updated[i] = true;

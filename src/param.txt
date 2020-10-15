@@ -14,12 +14,12 @@ pixon_uniform     = true
 #=============================================
 # driving light curve model
 # 0: pixon; 1: drw; 2: contfix; 3: all
-drv_lc_model          = 0
+drv_lc_model          = 3
 
 #=============================================
 #  file name for continuum and emission line
 #=============================================
-fcont              = data/cont.txt
+fcont             = data/cont.txt
 fline             = data/line.txt
 
 #=============================================

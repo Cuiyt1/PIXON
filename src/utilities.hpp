@@ -86,6 +86,7 @@ class Config
     int pixon_map_low_bound;
     /* maximum pixon size */
     int max_pixon_size;
+    /* snsitivity for pixon size search */
     double sensitivity;
 };
 
@@ -284,8 +285,8 @@ class Pixon
     double *image;           /* image */
     double *pseudo_image;    /* pseudo image */
 
-    double tau0;
-    int ipositive;
+    double tau0;    /* lower bound of lags */
+    int ipositive;  /* first index of positive lags */
     double sensitivity;
 
     double dt;          /* time interval of continuum, image grid */

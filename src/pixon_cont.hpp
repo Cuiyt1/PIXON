@@ -30,6 +30,7 @@ class PixonCont:public Pixon
     void compute_mem_grad(const double *x);
     void compute_mem_grad_cont(const double *x);
     double compute_pixon_number_cont();
+    double compute_pixon_number();
     void reduce_ipixon_cont();
     void increase_ipixon_cont();
 

@@ -408,7 +408,7 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
 
     if(-df < dnum * (1.0 + cfg.sensitivity/sqrt(2.0*num)))
     {
-      /* pixon size go back to previous value */
+      /* pixon size goes back to previous value */
       pixon.increase_pixon_map_all();
       break;
     }
@@ -918,6 +918,7 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
 
     if(-df < dnum * (1.0 + cfg.sensitivity/sqrt(2.0*num)))
     {
+      /* pixon size goes back to previous value */
       pixon.increase_pixon_map_all();
       break;
     }
@@ -1208,6 +1209,7 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
 
     if(-df < dnum * (1.0 + cfg.sensitivity/sqrt(2.0*num)))
     {
+      /* pixon size goes back to previous value */
       pixon.increase_pixon_map_all();
       break;
     }

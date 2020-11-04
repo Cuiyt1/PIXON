@@ -1,0 +1,12 @@
+*
+!src/
+!data/
+!data/plot_results.py
+!CMakeLists.txt
+!src/*.[hc]pp
+!src/*.[ch]
+!src/param.txt
+!cdnest/
+!cdnest/*.[ch]
+!cdnest/CMakeLists.txt
+!.gitignore

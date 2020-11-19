@@ -28,13 +28,16 @@ int run(Config &cfg)
 {
   Data cont, line;
   cont.load(cfg.fcont);  /* load cont data */
-  line.load(cfg.fline); /* load line data */
+  line.load(cfg.fline);  /* load line data */
 
   /* continuum reconstruction */
   cout<<"Start cont reconstruction."<<endl;
-  double text_rec = 0.1 * (cont.time[cont.size-1] - cont.time[0]);
-  double tback = fmax(cont.time[0] - (line.time[0] - cfg.tau_range_up), text_rec);
-  double tforward = fmax((line.time[line.size-1] - cfg.tau_range_low) - cont.time[cont.size-1], text_rec);
+  /* time extending of reconstruction, 1% of time span */
+  double text_rec = 0.1 * fmax((cont.time[cont.size-1] - cont.time[0]), (line.time[line.size-1]-line.time[0]));
+  /* time backward */
+  double tback = fmax(cont.time[0] - (line.time[0] - cfg.tau_range_up - text_rec), text_rec);
+  /* time forward */
+  double tforward = fmax((line.time[line.size-1] - cfg.tau_range_low + text_rec) - cont.time[cont.size-1], text_rec);
   double sigmad, taud, syserr;
 
   /* use drw to reconstruct continuum */
@@ -186,7 +189,7 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
-    up[i] =  10.0;
+    up[i] =   10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
   if(cfg.fix_bg)
@@ -201,8 +204,8 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
   }
   for(i=npixel+1; i<ndim; i++)
   {
-    low[i] = -5.0;
-    up[i] =  5.0;
+    low[i] = -10.0;
+    up[i] =   10.0;
     x[i] = 0.0;
   }
 
@@ -214,7 +217,8 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
   opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x, f);
-  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
   
@@ -247,7 +251,8 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
     }
 
     opt0.optimize(x, f);
-    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -333,7 +338,7 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
-    up[i] =  10.0;
+    up[i] =   10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
   if(cfg.fix_bg)
@@ -348,8 +353,8 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   }
   for(i=npixel+1; i<ndim; i++)
   {
-    low[i] = -5.0;
-    up[i] =  5.0;
+    low[i] = -10.0;
+    up[i] =   10.0;
     x[i] = 0.0;
   }
 
@@ -361,7 +366,8 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x, f);
-  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
   
@@ -389,7 +395,8 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
     }
 
     opt0.optimize(x, f);
-    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_drw, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -485,8 +492,8 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   /* bounds and initial values */
   for(i=0; i<cont_recon.size; i++)
   {
-    low_cont[i] = fmax(0.0, cont_recon.flux[i] - 3.0 * cont_recon.error[i]);
-    up_cont[i] =  cont_recon.flux[i] + 3.0 * cont_recon.error[i];
+    low_cont[i] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
+    up_cont[i] =            cont_recon.flux[i] + 5.0 * cont_recon.error[i];
     x_cont[i] = cont_recon.flux[i];
   }
   
@@ -598,8 +605,8 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   }
   for(i=0; i<pixon.cont.size; i++)
   {
-    low[i+npixel+1] = fmax(0.0, cont_recon.flux[i] - 3.0 * cont_recon.error[i]);
-    up[i+npixel+1] =            cont_recon.flux[i] + 3.0 * cont_recon.error[i];
+    low[i+npixel+1] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
+    up[i+npixel+1] =            cont_recon.flux[i] + 5.0 * cont_recon.error[i];
     x[i+npixel+1] = pixon.cont.flux[i];
   }
   
@@ -619,7 +626,8 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   }
 
   opt1.optimize(x, f);
-  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -652,7 +660,8 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
     }
 
     opt1.optimize(x, f);
-    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -737,8 +746,8 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   /* bounds and initial values */
   for(i=0; i<cont_recon.size; i++)
   {
-    low_cont[i] = fmax(0.0, cont_recon.flux[i] - 3.0 * cont_recon.error[i]);
-    up_cont[i] =  cont_recon.flux[i] + 3.0 * cont_recon.error[i];
+    low_cont[i] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
+    up_cont[i] =            cont_recon.flux[i] + 5.0 * cont_recon.error[i];
     x_cont[i] = cont_recon.flux[i];
   }
   
@@ -850,8 +859,8 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   }
   for(i=0; i<pixon.cont.size; i++)
   {
-    low[i+npixel+1] = fmax(0.0, cont_recon.flux[i] - 3.0 * cont_recon.error[i]);
-    up[i+npixel+1] =            cont_recon.flux[i] + 3.0 * cont_recon.error[i];
+    low[i+npixel+1] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
+    up[i+npixel+1] =            cont_recon.flux[i] + 5.0 * cont_recon.error[i];
     x[i+npixel+1] = pixon.cont.flux[i];
   }
   
@@ -871,7 +880,8 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   }
 
   opt1.optimize(x, f);
-  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -899,7 +909,8 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
     }
 
     opt1.optimize(x, f);
-    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc_cont_rm, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -1017,7 +1028,8 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon, 
   opt0.set_xtol_abs(cfg.tol);
   
   opt0.optimize(x, f);
-  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
   
@@ -1050,7 +1062,8 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon, 
     }
 
     opt0.optimize(x, f);
-    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     
@@ -1162,7 +1175,8 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
   opt0.set_xtol_abs(cfg.tol);
    
   opt0.optimize(x, f);
-  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+  rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
   
@@ -1190,7 +1204,8 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
     }
 
     opt0.optimize(x, f);
-    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
+    rc = tnc(ndim, x.data(), &f, g.data(), func_tnc, args, low.data(), up.data(), 
+      NULL, NULL, TNC_MSG_INFO|TNC_MSG_EXIT,
       maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
       rescale, &nfeval, &niter, NULL);
     

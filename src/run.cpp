@@ -50,14 +50,14 @@ int run(Config &cfg)
   syserr = (exp(cont_model->best_params[0]) - 1.0) * cont_model->mean_error;
   
   int npixel;  /* number of pixels */
-  int npixon, npixon0; 
+  int npixon_size, npixon_size0; 
   int ipositive_tau; /* index of zero lag */
   double *pimg;
 
   pixon_sub_factor = cfg.pixon_sub_factor;
   pixon_size_factor = cfg.pixon_size_factor;
   pixon_map_low_bound = cfg.pixon_map_low_bound;
-  npixon0 = cfg.max_pixon_size*pixon_sub_factor/pixon_size_factor;
+  npixon_size0 = cfg.max_pixon_size*pixon_sub_factor/pixon_size_factor;
 
   /* number of pixels */
   npixel = (cfg.tau_range_up - cfg.tau_range_low) / (cont_model->cont_recon.time[1]-cont_model->cont_recon.time[0]);
@@ -129,10 +129,10 @@ int run(Config &cfg)
      * line_pixon_uniform.txt, line_pixon.txt
      * cont_pixon_uniform.txt, cont_pixon.txt
      */
-    npixon = npixon0;
-    run_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-    npixon = npixon0;
-    run_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    npixon_size = npixon_size0;
+    run_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    npixon_size = npixon_size0;
+    run_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
   }
   if(cfg.drv_lc_model == 1 || cfg.drv_lc_model == 3)
   {
@@ -141,10 +141,10 @@ int run(Config &cfg)
      * line_drw_uniform.txt, line_drw.txt
      * cont_drw_uniform.txt, cont_drw.txt
      */
-    npixon = npixon0;
-    run_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
-    npixon = npixon0;
-    run_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, sigmad, taud, syserr, cfg);
+    npixon_size = npixon_size0;
+    run_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, sigmad, taud, syserr, cfg);
+    npixon_size = npixon_size0;
+    run_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, sigmad, taud, syserr, cfg);
   }
   if(cfg.drv_lc_model == 2 || cfg.drv_lc_model == 3)
   {
@@ -152,10 +152,10 @@ int run(Config &cfg)
      * resp_contfix_uniform.txt, resp_contfix.txt
      * line_contfix_uniform.txt line_contfix.txt 
      */
-    npixon = npixon0;
-    run_contfix_uniform(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
-    npixon = npixon0;
-    run_contfix(cont_model->cont_recon, line, pimg, npixel, npixon, ipositive_tau, cfg);
+    npixon_size = npixon_size0;
+    run_contfix_uniform(cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    npixon_size = npixon_size0;
+    run_contfix(cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
   }
 
   delete[] pimg;
@@ -163,14 +163,14 @@ int run(Config &cfg)
 }
 
 void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
-                    int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
+                    int& npixon_size, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_drw..."<<endl;
-  cout<<"npixon:"<<npixon<<endl;
+  cout<<"npixon_size:"<<npixon_size<<endl;
   int i, iter;
   bool flag;
-  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon_size, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
@@ -312,14 +312,14 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
 }
 
 void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
-                  int& npixon, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
+                  int& npixon_size, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_drw_uniform..."<<endl;
-  cout<<"npixon:"<<npixon<<endl;
+  cout<<"npixon_size:"<<npixon_size<<endl;
   int i, iter;
   bool flag;
-  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
+  PixonDRW pixon(cont_data, cont_recon, line, npixel, npixon_size, sigmad, taud, syserr, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
@@ -378,10 +378,10 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
-  while(npixon>pixon_map_low_bound+1)
+  while(npixon_size>pixon_map_low_bound+1)
   {
-    npixon--;
-    cout<<"npixon:"<<npixon<<",  size: "<<pixon.pfft.pixon_sizes[npixon-1]<<endl;
+    npixon_size--;
+    cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 
     pixon.reduce_pixon_map_all();
     num = pixon.compute_pixon_number();
@@ -467,15 +467,15 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
 
 /* set continuum free and use pixons to model continuum, pixel-dependent pixon sizes for RM */
 void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
-                    int& npixon, int ipositive_tau, Config& cfg)
+                    int& npixon_size, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_pixon..."<<endl;
-  cout<<"npixon:"<<npixon<<endl;
+  cout<<"npixon_size:"<<npixon_size<<endl;
   bool flag;
   int i, iter;
-  int npixon_cont = 10;
-  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, cfg.sensitivity);
+  int npixon_size_cont = 10;
+  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon_size, npixon_size_cont, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
@@ -517,10 +517,10 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
  
-  while(npixon_cont>2)
+  while(npixon_size_cont>2)
   {
-    npixon_cont--;
-    cout<<"npixon_cont:"<<npixon_cont<<",  size: "<<pixon.pfft_cont.pixon_sizes[npixon_cont-1]<<endl;
+    npixon_size_cont--;
+    cout<<"npixon_size_cont:"<<npixon_size_cont<<",  size: "<<pixon.pfft_cont.pixon_sizes[npixon_size_cont-1]<<endl;
     
     pixon.reduce_ipixon_cont();
     num = pixon.compute_pixon_number_cont();
@@ -722,14 +722,14 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
 
 /* set continuum free and use pixons to model continuum, uniform pixon sizes for RM */
 void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg, 
-                            int npixel, int& npixon, int ipositive_tau, Config& cfg)
+                            int npixel, int& npixon_size, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_pixon_uniform..."<<endl;
-  cout<<"npixon:"<<npixon<<endl;
+  cout<<"npixon_size:"<<npixon_size<<endl;
   int i, iter;
-  int npixon_cont = 10;
-  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon, npixon_cont, ipositive_tau, cfg.sensitivity);
+  int npixon_size_cont = 10;
+  PixonCont pixon(cont_data, cont_recon, line, npixel, npixon_size, npixon_size_cont, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
 
@@ -771,10 +771,10 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   memcpy(x_old_cont.data(), x_cont.data(), cont_recon.size*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
  
-  while(npixon_cont>2)
+  while(npixon_size_cont>2)
   {
-    npixon_cont--;
-    cout<<"npixon_cont:"<<npixon_cont<<",  size: "<<pixon.pfft_cont.pixon_sizes[npixon_cont-1]<<endl;
+    npixon_size_cont--;
+    cout<<"npixon_size_cont:"<<npixon_size_cont<<",  size: "<<pixon.pfft_cont.pixon_sizes[npixon_size_cont-1]<<endl;
     
     pixon.reduce_ipixon_cont();
     num = pixon.compute_pixon_number_cont();
@@ -892,10 +892,10 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
-  while(npixon>pixon_map_low_bound+1)
+  while(npixon_size>pixon_map_low_bound+1)
   {
-    npixon--;
-    cout<<"npixon:"<<npixon<<",  size: "<<pixon.pfft.pixon_sizes[npixon-1]<<endl;
+    npixon_size--;
+    cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 
     pixon.reduce_pixon_map_all();
     num = pixon.compute_pixon_number();
@@ -980,13 +980,13 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
 }
 
 /* set continuum fixed from a drw reconstruction and use pixel dependent pixon sizes for RM */
-void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
+void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon_size, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_contfix..."<<endl;
-  cout<<"npixon:"<<npixon<<endl;
+  cout<<"npixon_size:"<<npixon_size<<endl;
   int i, iter;
-  Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);
+  Pixon pixon(cont, line, npixel, npixon_size, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   bool flag;
   double f, f_old, num, num_old, chisq, chisq_old, df, dnum;
@@ -1127,13 +1127,13 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon, 
 }
 
 /* set continuum fixed from a drw reconstruction and use uniform pixon sizes for RM */
-void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon, int ipositive_tau, Config& cfg)
+void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& npixon_size, int ipositive_tau, Config& cfg)
 {
   cout<<"************************************************************"<<endl;
   cout<<"Start run_contfix_uniform..."<<endl;
-  cout<<"npixon:"<<npixon<<endl;
+  cout<<"npixon_size:"<<npixon_size<<endl;
   int i;
-  Pixon pixon(cont, line, npixel, npixon, ipositive_tau, cfg.sensitivity);
+  Pixon pixon(cont, line, npixel, npixon_size, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num_old, num, df, dnum, chisq, chisq_old;
  
@@ -1187,10 +1187,10 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
-  while(npixon>pixon_map_low_bound+1)
+  while(npixon_size>pixon_map_low_bound+1)
   {
-    npixon--;
-    cout<<"npixon:"<<npixon<<",  size: "<<pixon.pfft.pixon_sizes[npixon-1]<<endl;
+    npixon_size--;
+    cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 
     pixon.reduce_pixon_map_all();
     num = pixon.compute_pixon_number();

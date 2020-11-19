@@ -204,7 +204,7 @@ class PixonFFT:public DataFFT
 {
   public:
     PixonFFT();
-    PixonFFT(int npixel, int npixon);
+    PixonFFT(int npixel, int npixon_size_max);
     ~PixonFFT();
     void convolve(const double *pseudo_img, int *pixon_map, double *conv);
     void convolve_pixon_diff_low(const double *pseudo_img, int *pixon_map, double *conv);
@@ -216,7 +216,7 @@ class PixonFFT:public DataFFT
 
     friend class Pixon;
 
-    int npixon;  /* total number of pixons */
+    int npixon_size_max;  /* maximum pixon size, in unit of pixel/pixon_sub_factor */
     int ipixon_min; /* minimum pixon index */
     double *pixon_sizes; /* pixon sizes */
     double *pixon_sizes_num; /* number of pixon at each size */
@@ -230,7 +230,7 @@ class PixonUniFFT:public DataFFT
 {
   public:
     PixonUniFFT();
-    PixonUniFFT(int npixel, int npixon);
+    PixonUniFFT(int npixel, int npixon_size_max);
     ~PixonUniFFT();
     void convolve(const double *pseudo_img, int ipixon, double *conv);
     /* reduce the minimum pixon size */
@@ -240,7 +240,7 @@ class PixonUniFFT:public DataFFT
 
     friend class Pixon;
 
-    int npixon;  /* total number of pixons */
+    int npixon_size_max;  /* maximum pixon size, in unit of pixel/pixon_sub_factor */
     int ipixon_min; /* minimum pixon index */
     double *pixon_sizes; /* pixon sizes */
   protected:
@@ -251,7 +251,7 @@ class Pixon
 {
   public:
     Pixon();
-    Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in=0, double sensitivity=1.0);
+    Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_size_in, int ipositive_in=0, double sensitivity=1.0);
     ~Pixon();
     double interp_image(double t);
     double interp_line(double t);

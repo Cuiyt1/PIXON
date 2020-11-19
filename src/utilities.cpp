@@ -692,21 +692,21 @@ void RMFFT::convolve_bg(const double *resp, int n, int ipositive, double *conv, 
 /* class PixonFFT */
 PixonFFT::PixonFFT()
 {
-  npixon = ipixon_min = 0;
+  npixon_size_max = ipixon_min = 0;
   pixon_sizes = NULL;
   pixon_sizes_num = NULL;
   conv_tmp = NULL;
 }
-PixonFFT::PixonFFT(int npixel_in, int npixon_in)
-      :DataFFT(npixel_in, 1.0, npixon_in*pixon_size_factor), npixon(npixon_in)
+PixonFFT::PixonFFT(int npixel_in, int npixon_size_max_in)
+      :DataFFT(npixel_in, 1.0, npixon_size_max_in*pixon_size_factor), npixon_size_max(npixon_size_max_in)
 {
   int i;
 
-  ipixon_min = npixon-1;
-  pixon_sizes = new double[npixon];
-  pixon_sizes_num = new double[npixon];
+  ipixon_min = npixon_size_max-1;
+  pixon_sizes = new double[npixon_size_max];
+  pixon_sizes_num = new double[npixon_size_max];
   conv_tmp = new double[nd];
-  for(i=0; i<npixon; i++)
+  for(i=0; i<npixon_size_max; i++)
   {
     pixon_sizes[i] = (i+1)*1.0/pixon_sub_factor;
     pixon_sizes_num[i] = 0;
@@ -717,9 +717,9 @@ PixonFFT::PixonFFT(int npixel_in, int npixon_in)
 
 PixonFFT::~PixonFFT()
 {
-  if(npixon > 0)
+  if(npixon_size_max > 0)
   {
-    npixon = 0;
+    npixon_size_max = 0;
     delete[] pixon_sizes;
     delete[] pixon_sizes_num;
     delete[] conv_tmp;
@@ -736,7 +736,7 @@ void PixonFFT::convolve(const double *pseudo_img, int *pixon_map, double *conv)
   fftw_execute(pdata);
 
   /* loop over all pixon sizes */
-  for(ip=ipixon_min; ip<npixon; ip++)
+  for(ip=ipixon_min; ip<npixon_size_max; ip++)
   {
     if(pixon_sizes_num[ip] > 0)
     {
@@ -775,7 +775,7 @@ void PixonFFT::convolve_pixon_diff_low(const double *pseudo_img, int *pixon_map,
   fftw_execute(pdata);
 
   /* loop over all pixon sizes */
-  for(ip=ipixon_min; ip<npixon; ip++)
+  for(ip=ipixon_min; ip<npixon_size_max; ip++)
   {
     if(pixon_sizes_num[ip] > 0)
     {
@@ -812,7 +812,7 @@ void PixonFFT::convolve_pixon_diff_up(const double *pseudo_img, int *pixon_map, 
   fftw_execute(pdata);
 
   /* loop over all pixon sizes */
-  for(ip=ipixon_min; ip<npixon; ip++)
+  for(ip=ipixon_min; ip<npixon_size_max; ip++)
   {
     if(pixon_sizes_num[ip] > 0)
     {
@@ -856,7 +856,7 @@ void PixonFFT::reduce_pixon_min()
 /* reduce the minimum pixon size */
 void PixonFFT::increase_pixon_min()
 {
-  if(ipixon_min < npixon-1)
+  if(ipixon_min < npixon_size_max-1)
   {
     ipixon_min++;
   }
@@ -876,17 +876,17 @@ int PixonFFT::get_ipxion_min()
 /* class PixonUniFFT */
 PixonUniFFT::PixonUniFFT()
 {
-  npixon = ipixon_min = 0;
+  npixon_size_max = ipixon_min = 0;
   pixon_sizes = NULL;
 }
-PixonUniFFT::PixonUniFFT(int npixel_in, int npixon_in)
-      :DataFFT(npixel_in, 1.0, npixon_in*pixon_size_factor), npixon(npixon_in)
+PixonUniFFT::PixonUniFFT(int npixel_in, int npixon_size_max_in)
+      :DataFFT(npixel_in, 1.0, npixon_size_max_in*pixon_size_factor), npixon_size_max(npixon_size_max_in)
 {
   int i;
 
-  ipixon_min = npixon-1;
-  pixon_sizes = new double[npixon];
-  for(i=0; i<npixon; i++)
+  ipixon_min = npixon_size_max-1;
+  pixon_sizes = new double[npixon_size_max];
+  for(i=0; i<npixon_size_max; i++)
   {
     pixon_sizes[i] = (i+1)*1.0/pixon_sub_factor;
   }
@@ -894,9 +894,9 @@ PixonUniFFT::PixonUniFFT(int npixel_in, int npixon_in)
 
 PixonUniFFT::~PixonUniFFT()
 {
-  if(npixon > 0)
+  if(npixon_size_max > 0)
   {
-    npixon = 0;
+    npixon_size_max = 0;
     delete[] pixon_sizes;
   }
 }
@@ -949,7 +949,7 @@ void PixonUniFFT::reduce_pixon_min()
 /* reduce the minimum pixon size */
 void PixonUniFFT::increase_pixon_min()
 {
-  if(ipixon_min < npixon-1)
+  if(ipixon_min < npixon_size_max-1)
   {
     ipixon_min++;
   }
@@ -986,9 +986,9 @@ Pixon::Pixon()
   conv_pixon = NULL;
 }
 
-Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ipositive_in, double sensitivity_in)
+Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_size_in, int ipositive_in, double sensitivity_in)
   :cont(cont_in), line(line_in), rmfft(cont_in, fmax(npixel_in-ipositive_in, ipositive_in)), 
-   pfft(npixel_in, npixon_in), npixel(npixel_in),
+   pfft(npixel_in, npixon_size_in), npixel(npixel_in),
    bg(0.0), ipositive(ipositive_in), sensitivity(sensitivity_in)
 {
   pixon_map = new int[npixel];
@@ -1011,7 +1011,7 @@ Pixon::Pixon(Data& cont_in, Data& line_in, int npixel_in,  int npixon_in, int ip
   int i;
   for(i=0; i<npixel; i++)
   {
-    pixon_map[i] = npixon_in-1;  /* set the largest pixon size */
+    pixon_map[i] = npixon_size_in-1;  /* set the largest pixon size */
   }
 
   tau0 = 0.0 - ipositive * dt;
@@ -1444,7 +1444,7 @@ bool Pixon::increase_pixon_map()
   compute_mem_grad_pixon_up();
   for(i=0; i<npixel; i++)
   {
-    if(pixon_map[i] < pfft.npixon - 1)
+    if(pixon_map[i] < pfft.npixon_size_max - 1)
     {
       psize = pfft.pixon_sizes[pixon_map[i]];
       psize_up = pfft.pixon_sizes[pixon_map[i]+1];

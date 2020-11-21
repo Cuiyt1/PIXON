@@ -93,7 +93,7 @@ double PixonDRW::compute_chisquare(const double *x)
 /* calculate prior of uq and us, which are Gaussian variables */
 double PixonDRW::compute_prior(const double *x)
 {
-  /* include prior */
+  /* include prior, minimizing, so drop the minus sign */
   int i;
   prior = 0.0;
   for(i=0; i<cont.size+nq; i++)
@@ -112,7 +112,7 @@ void PixonDRW::compute_post_grad(const double *x)
 {
   Pixon::compute_chisquare_grad(x);       /* derivative of chisq_line with respect to transfer function */
 
-  /* derivative of chisq with respect to continuum */
+  /* derivative of chisq_line with respect to continuum */
   int i, j;
   double *res_mat = workspace;
   double grad_in, tj, ti, Iintp;

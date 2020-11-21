@@ -1166,7 +1166,7 @@ double Pixon::compute_mem(const double *x)
   return mem;
 }
 
-/* compute gradient of chi square */
+/* compute gradient of chi square line */
 void Pixon::compute_chisquare_grad(const double *x)
 {
   int i, k, j;

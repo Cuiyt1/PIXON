@@ -174,7 +174,7 @@ void PixonCont::compute_chisquare_grad(const double *x)
   double psize, grad_in, grad_out, K, t;
   
   rmfft_pixon.set_resp_real(image, npixel, ipositive);
-  psize = pfft_cont.pixon_sizes[ipixon_cont];
+  psize = pfft_cont.pixon_sizes[ipixon_cont]; /* uniform pixon size for continuum */
   for(i=0; i<cont.size; i++)
   {
     for(j=0; j<cont.size; j++)

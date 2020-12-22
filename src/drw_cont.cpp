@@ -196,7 +196,7 @@ void PixonDRW::compute_matrix()
   multiply_mat_MN(USmat, PEmat1, PEmat2, cont.size, cont.size, cont_data.size);
   for(i=0; i<cont.size; i++)
   {
-    cont.error[i] = sqrt(sigmad2 + syserr*syserr - PEmat2[i*cont.size + i]);
+    cont.error[i] = sqrt(sigmad2 - PEmat2[i*cont.size + i]);
   }
   
   // Cq^1/2 x (L - SxC^-1xL)^T

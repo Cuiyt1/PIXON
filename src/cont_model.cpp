@@ -587,7 +587,7 @@ void ContModel::recon(const void *model)
 
   for(i=0; i<cont_recon.size; i++)
   {
-    cont_recon.flux[i] += yq[0];
+    cont_recon.flux[i] += y[i] + yq[0];
   }
 
   ofstream fout;

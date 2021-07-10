@@ -385,7 +385,7 @@ void save_particle()
   void *particle_message;
   
   if(count_saves%100 == 0)
-    printf("# Saving particle to disk. N= %d.\n", count_saves);
+    printf("#[%.1f%%] Saving particle to disk. N= %d.\n", 100.0*count_saves/options.max_num_saves, count_saves);
     
   whichparticle =  gsl_rng_uniform_int(dnest_gsl_r,options.num_particles);
 
@@ -427,7 +427,7 @@ void dnest_mcmc_run()
       update_particle(which);
     }
         
-    if( !enough_levels(levels, size_levels)  && levels[size_levels-1].log_likelihood.value < log_likelihoods[which].value)
+    if( !enough_levels(levels, size_levels)  && levels[size_levels-1].log_likelihood.value <= log_likelihoods[which].value)
     {
       above[size_above] = log_likelihoods[which];
       size_above++;
@@ -460,7 +460,7 @@ void update_particle(unsigned int which)
     log_H = 0.0;
 
   dnest_perturb_accept[which] = 0;
-  if( gsl_rng_uniform(dnest_gsl_r) <= exp(log_H) && level->log_likelihood.value < logl_proposal.value)
+  if( gsl_rng_uniform(dnest_gsl_r) <= exp(log_H) && level->log_likelihood.value <= logl_proposal.value)
   {
     memcpy(particle, proposal, dnest_size_of_modeltype);
     memcpy(logl, &logl_proposal, sizeof(LikelihoodType));
@@ -480,7 +480,7 @@ void update_particle(unsigned int which)
   for(; current_level < size_levels-1; ++current_level)
   {
     levels[current_level].visits++;
-    if(levels[current_level+1].log_likelihood.value < log_likelihoods[which].value)
+    if(levels[current_level+1].log_likelihood.value <= log_likelihoods[which].value)
       levels[current_level].exceeds++;
     else
       break; // exit the loop if it does not satify higher levels
@@ -510,7 +510,7 @@ void update_level_assignment(unsigned int which)
   if(log_A > 0.0)
     log_A = 0.0;
 
-  if( gsl_rng_uniform(dnest_gsl_r) <= exp(log_A) && levels[proposal].log_likelihood.value < log_likelihoods[which].value)
+  if( gsl_rng_uniform(dnest_gsl_r) <= exp(log_A) && levels[proposal].log_likelihood.value <= log_likelihoods[which].value)
   {
     level_assignments[which] = proposal;
 

@@ -173,6 +173,7 @@ ContModel::ContModel()
   USmat = NULL;
   PEmat1 = NULL;
   PEmat2 = NULL;
+  PSmat = NULL;
 
   dnest_free_fptrset(fptrset);
 }
@@ -207,6 +208,7 @@ ContModel::ContModel(Data& cont_in, double tback, double tforward, double tau_in
   USmat = new double [cont.size * cont_recon.size];
   PEmat1 = new double [cont.size * cont_recon.size];
   PEmat2 = new double [cont_recon.size * cont_recon.size];
+  PSmat = new double [cont_recon.size * cont_recon.size];
 
   /* dnest configuration */
   num_params_drw = 3; /* syserr, sigma, and tau */
@@ -287,6 +289,7 @@ ContModel::~ContModel()
   delete[] USmat;
   delete[] PEmat1;
   delete[] PEmat2;
+  delete[] PSmat;
 
   for(i=0; i<num_params; i++)
   {
@@ -496,9 +499,19 @@ void ContModel::recon()
   multiply_mat_transposeB_semiseparable_drw(USmat, W, D, phi, cont.size, cont_recon.size, sigma2, PEmat1);
   multiply_mat_MN(USmat, PEmat1, PEmat2, cont_recon.size, cont_recon.size, cont.size);
 
+  //for(i=0; i<cont_recon.size; i++)
+  //{
+  //  cont_recon.error[i] = sqrt(sigma2 + syserr*syserr - PEmat2[i*cont_recon.size + i]);
+  //}
+
+  set_covar_Pmat(sigma, tau, alpha);
+  for(i=0; i<cont_recon.size * cont_recon.size; i++)
+  {
+    PSmat[i] = PSmat[i] - PEmat2[i];
+  }
   for(i=0; i<cont_recon.size; i++)
   {
-    cont_recon.error[i] = sqrt(sigma2 + syserr*syserr - PEmat2[i*cont_recon.size + i]);
+    cont_recon.error[i] = sqrt(PSmat[i*cont_recon.size + i]);
   }
 
   for(i=0; i<cont_recon.size; i++)
@@ -576,14 +589,25 @@ void ContModel::recon(const void *model)
   multiply_mat_transposeB_semiseparable_drw(USmat, W, D, phi, cont.size, cont_recon.size, sigma2, PEmat1);
   multiply_mat_MN(USmat, PEmat1, PEmat2, cont_recon.size, cont_recon.size, cont.size);
 
+  set_covar_Pmat(sigma, tau, alpha);
+  for(i=0; i<cont_recon.size * cont_recon.size; i++)
+  {
+    PSmat[i] = PSmat[i] - PEmat2[i];
+  }
   for(i=0; i<cont_recon.size; i++)
   {
-    cont_recon.error[i] = sqrt(sigma2 + syserr*syserr - PEmat2[i*cont_recon.size + i]);
+    cont_recon.error[i] = sqrt(PSmat[i*cont_recon.size + i]);
   }
+  Chol_decomp_L(PSmat, cont_recon.size, &info);
+  multiply_matvec(PSmat, &pm[num_params_var], cont_recon.size, y);
 
-  compute_inverse_semiseparable_plus_diag(cont_recon.time, cont_recon.size, sigma2, 1.0/tau, 
-                                          cont_recon.error, 0.0, u, v, W, D, phi, workspace_uv);
-  multiply_matvec_semiseparable_uv(&pm[num_params_var], u, W, D, phi, cont_recon.size, y);
+  //for(i=0; i<cont_recon.size; i++)
+  //{
+  //  cont_recon.error[i] = sqrt(sigma2 + syserr*syserr - PEmat2[i*cont_recon.size + i]);
+  //}
+  //compute_inverse_semiseparable_plus_diag(cont_recon.time, cont_recon.size, sigma2, 1.0/tau, 
+  //                                        cont_recon.error, 0.0, u, v, W, D, phi, workspace_uv);
+  //multiply_matvec_semiseparable_uv(&pm[num_params_var], u, W, D, phi, cont_recon.size, y);
 
   for(i=0; i<cont_recon.size; i++)
   {
@@ -611,6 +635,24 @@ void ContModel::set_covar_Umat(double sigma, double tau, double alpha)
     {
       t2 = cont.time[j];
       USmat[i*cont.size+j] = sigma*sigma * exp (- pow (fabs(t1-t2) / tau, alpha) );
+    }
+  }
+  return;
+}
+
+void ContModel::set_covar_Pmat(double sigma, double tau, double alpha)
+{
+  double t1, t2;
+  int i, j;
+ 
+  for(i=0; i<cont_recon.size; i++)
+  {
+    t1 = cont_recon.time[i];
+    for(j=0; j<=i; j++)
+    {
+      t2 = cont_recon.time[j];
+      PSmat[i*cont_recon.size+j] = sigma*sigma* exp (- pow (fabs(t1-t2) / tau, alpha));
+      PSmat[j*cont_recon.size+i] = PSmat[i*cont_recon.size+j];
     }
   }
   return;

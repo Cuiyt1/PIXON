@@ -194,10 +194,21 @@ void PixonDRW::compute_matrix()
   // SxC^-1xS^T
   multiply_mat_transposeB_semiseparable_drw(USmat, W_data, D_data, phi_data, cont_data.size, cont.size, sigmad2, PEmat1);
   multiply_mat_MN(USmat, PEmat1, PEmat2, cont.size, cont.size, cont_data.size);
+
+  set_covar_Pmat(sigmad, taud, alpha, PSmat);
+  for(i=0; i<cont.size * cont.size; i++)
+  {
+    PQmat[i] = PSmat[i] - PEmat2[i];
+  }
+
+  // assign errors
   for(i=0; i<cont.size; i++)
   {
-    cont.error[i] = sqrt(sigmad2 - PEmat2[i*cont.size + i]);
+    cont.error[i] = sqrt(PQmat[i*cont.size + i]);
   }
+
+  // Q^1/2
+  Chol_decomp_L(PQmat, cont.size, &info);
   
   // Cq^1/2 x (L - SxC^-1xL)^T
   multiply_mat_MN(USmat, CL, PEmat2, cont.size, nq, cont_data.size);
@@ -206,21 +217,6 @@ void PixonDRW::compute_matrix()
     PEmat1[i] = 1.0 - PEmat2[i];
   }
   multiply_mat_MN_transposeB(Cq, PEmat1, QLmat, nq, cont.size, nq);
-
-  set_covar_Pmat(sigmad, taud, alpha, PSmat);
-  compute_semiseparable_drw(cont.time, cont.size, sigmad2, 1.0/taud, cont.error, 0.0, W_recon, D_recon, phi_recon);
-
-  // Q = [S^-1 + N^-1]^-1 = N x [S+N]^-1 x S
-  multiply_mat_semiseparable_drw(PSmat, W_recon, D_recon, phi_recon, cont.size, cont.size, sigmad2, PEmat2);
-  for(i=0; i<cont.size; i++)
-  {
-    for(j=0; j<=i; j++)
-    {
-      PQmat[i*cont.size + j] = PQmat[j*cont.size + i] = cont.error[i] * cont.error[i] * PEmat2[i*cont.size+j];
-    }
-  }  
-  // Q^1/2
-  Chol_decomp_L(PQmat, cont.size, &info);
 
   delete[] PEmat1;
   delete[] PEmat2;

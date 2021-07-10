@@ -42,6 +42,7 @@ class ContModel
     void recon(const void *model);
     void get_best_params();
     void set_covar_Umat(double sigma, double tau, double alpha);
+    void set_covar_Pmat(double sigma, double tau, double alpha);
 
     Data cont;   /* continuum data */
     Data cont_recon; /* continuum reconstruction */
@@ -53,6 +54,7 @@ class ContModel
     double *Larr_data;
     double *USmat;
     double *PEmat1, *PEmat2;
+    double *PSmat;
     
     int nq; 
     int num_params;

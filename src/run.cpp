@@ -242,7 +242,7 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
   do
   {
     iter++;
-    cout<<"iter:"<<iter<<endl;
+    cout<<"=============iter:"<<iter<<"============="<<endl;
 
     flag = pixon.update_pixon_map();
     if(!flag)
@@ -396,8 +396,11 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
+  iter = 0;
   while(npixon_size>pixon_map_low_bound+1)
   {
+    iter++;
+    cout<<"=============iter:"<<iter<<"============="<<endl;
     npixon_size--;
     cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 
@@ -672,7 +675,7 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   do
   {
     iter++;
-    cout<<"iter:"<<iter<<endl;
+    cout<<"=============iter:"<<iter<<"============="<<endl;
     
     flag = pixon.update_pixon_map();
     if(!flag)
@@ -931,9 +934,12 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   chisq_old = pixon.compute_chisquare(x.data());
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
-
+  
+  iter = 0;
   while(npixon_size>pixon_map_low_bound+1)
   {
+    iter++;
+    cout<<"=============iter:"<<iter<<"============="<<endl;
     npixon_size--;
     cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 
@@ -1095,7 +1101,7 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon_s
   do
   {
     iter++;
-    cout<<"iter:"<<iter<<endl;
+    cout<<"=============iter:"<<iter<<"============="<<endl;
     
     flag = pixon.update_pixon_map();
     if(!flag)
@@ -1186,6 +1192,7 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
   Pixon pixon(cont, line, npixel, npixon_size, ipositive_tau, cfg.sensitivity);
   void *args = (void *)&pixon;
   double f, f_old, num_old, num, df, dnum, chisq, chisq_old;
+  int iter;
  
   int ndim = npixel + 1;
   /* TNC */
@@ -1239,8 +1246,11 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
   memcpy(x_old.data(), x.data(), ndim*sizeof(double));
   cout<<f_old<<"  "<<num_old<<"  "<<chisq_old<<endl;
 
+  iter = 0;
   while(npixon_size>pixon_map_low_bound+1)
   {
+    iter++;
+    cout<<"=============iter:"<<iter<<"============="<<endl;
     npixon_size--;
     cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 

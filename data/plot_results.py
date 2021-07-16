@@ -50,8 +50,8 @@ else:
 ntype = len(itypes)
 wd = 0.75/ntype
 
-fig = plt.figure(figsize=(15, 5*ntype))
-fig_map = plt.figure(figsize=(10, 5*ntype))
+fig = plt.figure(figsize=(15, 4*ntype))
+fig_map = plt.figure(figsize=(10, 4*ntype))
 for iw, i in enumerate(itypes):
   fn = fnames[i]
   #===========================================================
@@ -112,6 +112,10 @@ for iw, i in enumerate(itypes):
   ax_map.plot(pixon_map_uniform[:, 0], pixon_map_uniform[:, 1], lw=1, label=fn[1:]+' uniform', color='b')
   ax_map.set_ylabel("Pixon Size")
   ax_map.legend(frameon=False, ncol=2)
+  if iw < len(itypes) - 1:
+    [xt.set_visible(False) for xt in ax1.get_xticklabels()]
+    [xt.set_visible(False) for xt in ax2.get_xticklabels()]
+    [xt.set_visible(False) for xt in ax_map.get_xticklabels()]
 
 ax1.set_xlabel("Time")
 ax2.set_xlabel("Time Lag")
@@ -119,7 +123,7 @@ ax_map.set_xlabel("Time Lag")
 
 fname = basename(config["dump"]["fline"])
 fname = fname.replace(".txt", ".pdf")
-pdf.savefig(fig)
-pdf.savefig(fig_map)
+pdf.savefig(fig, bbox_inches='tight')
+pdf.savefig(fig_map, bbox_inches='tight')
 
 pdf.close()

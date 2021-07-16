@@ -190,12 +190,14 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
   vector<double>low(ndim), up(ndim);
 
   /* bounds and initial values */
+  /* transfer function */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =   10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
+  /* background */
   if(cfg.fix_bg)
   {
     low[npixel] = up[npixel] = x[npixel] = cfg.bg;
@@ -206,13 +208,15 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
     up[npixel] = 1.0;
     x[npixel] = 0.0;
   }
+  /* continuum reconstruction */
   for(i=npixel+1; i<ndim; i++)
   {
     low[i] = -10.0;
     up[i] =   10.0;
     x[i] = 0.0;
   }
-
+  
+  /* initial optimization */
   opt0.set_min_objective(func_nlopt_cont_drw, args);
   opt0.set_lower_bounds(low);
   opt0.set_upper_bounds(up);
@@ -346,12 +350,14 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   vector<double>low(ndim), up(ndim);
 
   /* bounds and initial values */
+  /* transfer function */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =   10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
+  /* background */
   if(cfg.fix_bg)
   {
     low[npixel] = up[npixel] = x[npixel] = cfg.bg;
@@ -362,6 +368,7 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
     up[npixel] = 1.0;
     x[npixel] = 0.0;
   }
+  /* continuum reconstruction */
   for(i=npixel+1; i<ndim; i++)
   {
     low[i] = -10.0;
@@ -606,12 +613,14 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   vector<double> low(ndim), up(ndim);
 
   /* bounds and initial values */
+  /* tranfer function */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
+  /* background */
   if(cfg.fix_bg)
   {
     low[npixel] = up[npixel] = x[npixel] = cfg.bg;
@@ -622,6 +631,7 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
     up[npixel] = 1.0;
     x[npixel] = 0.0;
   }
+  /* continuum reconstruction */
   for(i=0; i<pixon.cont.size; i++)
   {
     low[i+npixel+1] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
@@ -868,12 +878,14 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   vector<double> low(ndim), up(ndim);
 
   /* bounds and initial values */
+  /* transfer function */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
+  /* background */
   if(cfg.fix_bg)
   {
     low[npixel] = up[npixel] = x[npixel] = cfg.bg;
@@ -884,6 +896,7 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
     up[npixel] = 1.0;
     x[npixel] = 0.0;
   }
+  /* continuuum reconstruction */
   for(i=0; i<pixon.cont.size; i++)
   {
     low[i+npixel+1] = fmax(0.0, cont_recon.flux[i] - 5.0 * cont_recon.error[i]);
@@ -1038,12 +1051,14 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon_s
   vector<double>low(ndim), up(ndim);
 
   /* bounds and initial values */
+  /* transfer function */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
+  /* background */
   if(cfg.fix_bg)
   {
     low[npixel] = up[npixel] = x[npixel] = cfg.bg;
@@ -1184,12 +1199,14 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
   vector<double> low(ndim), up(ndim);
   
   /* bounds and initial values */
+  /* transfer function */
   for(i=0; i<npixel; i++)
   {
     low[i] = -100.0;
     up[i] =  10.0;
     x[i] = log(1.0/(npixel * pixon.dt));
   }
+  /* background */
   if(cfg.fix_bg)
   {
     low[npixel] = up[npixel] = x[npixel] = cfg.bg;

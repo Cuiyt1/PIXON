@@ -162,6 +162,10 @@ int run(Config &cfg)
   return 0;
 }
 
+/*
+ * continuum free with drw, line with pixon
+ *
+ */
 void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int npixel, 
                     int& npixon_size, int ipositive_tau, double sigmad, double taud, double syserr, Config& cfg)
 {
@@ -307,7 +311,14 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
     fout<<pixon.cont.time[i]<<" "<<pixon.cont.flux[i]*pixon.cont.norm<<"  "<<pixon.cont.error[i]*pixon.cont.norm<<endl;
   }
   fout.close();
-
+  
+  fname = "data/pixon_map_drw.txt_" + to_string(cfg.pixon_basis_type);
+  fout.open(fname);
+  for(i=0; i<npixel; i++)
+  {
+    fout<<(i-ipositive_tau)*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
+  }
+  fout.close();
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
@@ -459,6 +470,14 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   for(i=0; i<pixon.cont.size; i++)
   {
     fout<<pixon.cont.time[i]<<" "<<pixon.cont.flux[i]*pixon.cont.norm<<"  "<<pixon.cont.error[i]*pixon.cont.norm<<endl;
+  }
+  fout.close();
+  
+  fname = "data/pixon_map_drw_uniform.txt_" + to_string(cfg.pixon_basis_type);
+  fout.open(fname);
+  for(i=0; i<npixel; i++)
+  {
+    fout<<(i-ipositive_tau)*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
   }
   fout.close();
 
@@ -717,6 +736,14 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   }
   fout.close();
   
+  fname = "data/pixon_map_pixon.txt_" + to_string(cfg.pixon_basis_type);
+  fout.open(fname);
+  for(i=0; i<npixel; i++)
+  {
+    fout<<(i-ipositive_tau)*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
+  }
+  fout.close();
+
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
@@ -976,6 +1003,14 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   }
   fp.close();
 
+  fname = "data/pixon_map_pixon_uniform.txt_" + to_string(cfg.pixon_basis_type);
+  fout.open(fname);
+  for(i=0; i<npixel; i++)
+  {
+    fout<<(i-ipositive_tau)*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
+  }
+  fout.close();
+
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
 }
 
@@ -1115,7 +1150,7 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon_s
   }
   fout.close();
 
-  fname = "data/pixon_map.txt_" + to_string(cfg.pixon_basis_type);
+  fname = "data/pixon_map_contfix.txt_" + to_string(cfg.pixon_basis_type);
   fout.open(fname);
   for(i=0; i<npixel; i++)
   {
@@ -1264,6 +1299,14 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
   }
   fout.close();
   
+  fname = "data/pixon_map_contfix_uniform.txt_" + to_string(cfg.pixon_basis_type);
+  fout.open(fname);
+  for(i=0; i<npixel; i++)
+  {
+    fout<<(i-ipositive_tau)*pixon.dt<<"  "<<pixon.pfft.pixon_sizes[pixon.pixon_map[i]]<<endl;
+  }
+  fout.close();
+
   memcpy(pimg, x_old.data(), ndim*sizeof(double));
 
 }

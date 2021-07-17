@@ -242,7 +242,7 @@ void run_drw(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int np
   do
   {
     iter++;
-    cout<<"=============iter:"<<iter<<"============="<<endl;
+    cout<<"===================iter:"<<iter<<"==================="<<endl;
 
     flag = pixon.update_pixon_map();
     if(!flag)
@@ -400,7 +400,7 @@ void run_drw_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pimg
   while(npixon_size>pixon_map_low_bound+1)
   {
     iter++;
-    cout<<"=============iter:"<<iter<<"============="<<endl;
+    cout<<"===================iter:"<<iter<<"==================="<<endl;
     npixon_size--;
     cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 
@@ -675,7 +675,7 @@ void run_pixon(Data& cont_data, Data& cont_recon, Data& line, double *pimg, int 
   do
   {
     iter++;
-    cout<<"=============iter:"<<iter<<"============="<<endl;
+    cout<<"===================iter:"<<iter<<"==================="<<endl;
     
     flag = pixon.update_pixon_map();
     if(!flag)
@@ -939,7 +939,7 @@ void run_pixon_uniform(Data& cont_data, Data& cont_recon, Data& line, double *pi
   while(npixon_size>pixon_map_low_bound+1)
   {
     iter++;
-    cout<<"=============iter:"<<iter<<"============="<<endl;
+    cout<<"===================iter:"<<iter<<"==================="<<endl;
     npixon_size--;
     cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 
@@ -1101,7 +1101,7 @@ void run_contfix(Data& cont, Data& line, double *pimg, int npixel, int& npixon_s
   do
   {
     iter++;
-    cout<<"=============iter:"<<iter<<"============="<<endl;
+    cout<<"===================iter:"<<iter<<"==================="<<endl;
     
     flag = pixon.update_pixon_map();
     if(!flag)
@@ -1250,7 +1250,7 @@ void run_contfix_uniform(Data& cont, Data& line, double *pimg, int npixel, int& 
   while(npixon_size>pixon_map_low_bound+1)
   {
     iter++;
-    cout<<"=============iter:"<<iter<<"============="<<endl;
+    cout<<"===================iter:"<<iter<<"==================="<<endl;
     npixon_size--;
     cout<<"npixon_size:"<<npixon_size<<",  size: "<<pixon.pfft.pixon_sizes[npixon_size-1]<<endl;
 

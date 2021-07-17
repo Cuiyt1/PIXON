@@ -38,7 +38,7 @@ tspan= tlim2-tlim1
 #resp_input = np.loadtxt("resp_input.txt")
 
 # three types of runs
-fnames = ["_contfix", "_pixon", "_drw"]
+fnames = ["_pixon", "_drw", "_contfix"]
 postfix = config["dump"]["pixon_basis_type"]
 itype = int(config["dump"]["drv_lc_model"])
 
@@ -61,14 +61,6 @@ for iw, i in enumerate(itypes):
   ax1.errorbar(cont[:, 0], cont[:, 1], yerr = cont[:, 2], ls='none', marker='None', markersize=3, zorder=0)
   ax1.errorbar(line[:, 0], line[:, 1]-0.7*offset, yerr = line[:, 2], ls='none', marker='None', markersize=3, zorder=0)
   if i==0:
-    cont_rec = np.loadtxt("cont_recon_drw.txt")
-    cont_rec_uniform = cont_rec
-    line_rec = np.loadtxt("line_contfix_full.txt_"+postfix)
-    line_rec_uniform = np.loadtxt("line_contfix_uniform_full.txt_"+postfix)
-    pixon_map = np.loadtxt("pixon_map_contfix.txt_"+postfix)
-    pixon_map_uniform = np.loadtxt("pixon_map_contfix_uniform.txt_"+postfix)
-   
-  elif i==1:
     cont_rec = np.loadtxt("cont_pixon.txt_"+postfix)
     cont_rec_uniform = np.loadtxt("cont_pixon_uniform.txt_"+postfix)
     line_rec = np.loadtxt("line_pixon_full.txt_"+postfix)
@@ -76,13 +68,21 @@ for iw, i in enumerate(itypes):
     pixon_map = np.loadtxt("pixon_map_pixon.txt_"+postfix)
     pixon_map_uniform = np.loadtxt("pixon_map_pixon_uniform.txt_"+postfix)
    
-  else:
+  elif i==1:
     cont_rec = np.loadtxt("cont_drw.txt_"+postfix)
     cont_rec_uniform = np.loadtxt("cont_drw_uniform.txt_"+postfix)
     line_rec = np.loadtxt("line_drw_full.txt_"+postfix)
     line_rec_uniform = np.loadtxt("line_drw_uniform_full.txt_"+postfix)
     pixon_map = np.loadtxt("pixon_map_drw.txt_"+postfix)
     pixon_map_uniform = np.loadtxt("pixon_map_drw_uniform.txt_"+postfix)
+  
+  else:
+    cont_rec = np.loadtxt("cont_recon_drw.txt")
+    cont_rec_uniform = cont_rec
+    line_rec = np.loadtxt("line_contfix_full.txt_"+postfix)
+    line_rec_uniform = np.loadtxt("line_contfix_uniform_full.txt_"+postfix)
+    pixon_map = np.loadtxt("pixon_map_contfix.txt_"+postfix)
+    pixon_map_uniform = np.loadtxt("pixon_map_contfix_uniform.txt_"+postfix)
   
   ax1.plot(cont_rec[:, 0], cont_rec[:, 1], lw=1, color='r',)
   ax1.plot(cont_rec_uniform[:, 0], cont_rec_uniform[:, 1],  lw=1, color='b')

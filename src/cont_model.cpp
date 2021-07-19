@@ -429,7 +429,7 @@ void ContModel::get_best_params()
       param_buf[i] = *((double *)posterior_sample + i*num_params + j );
     }
     qsort(param_buf, num_ps, sizeof(double), compare);
-    *((double *)best_params + j) = param_buf[j];
+    *((double *)best_params + j) = param_buf[num_ps/2];
     printf("meidan: %f\n", param_buf[j]);
   }
 

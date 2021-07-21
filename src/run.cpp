@@ -129,10 +129,16 @@ int run(Config &cfg)
      * line_pixon_uniform.txt, line_pixon.txt
      * cont_pixon_uniform.txt, cont_pixon.txt
      */
-    npixon_size = npixon_size0;
-    run_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
-    npixon_size = npixon_size0;
-    run_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    if(cfg.pixon_uniform)
+    {
+      npixon_size = npixon_size0;
+      run_pixon_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    }
+    else 
+    {
+      npixon_size = npixon_size0;
+      run_pixon(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    }
   }
   if(cfg.drv_lc_model == 1 || cfg.drv_lc_model == 3)
   {
@@ -141,10 +147,16 @@ int run(Config &cfg)
      * line_drw_uniform.txt, line_drw.txt
      * cont_drw_uniform.txt, cont_drw.txt
      */
-    npixon_size = npixon_size0;
-    run_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, sigmad, taud, syserr, cfg);
-    npixon_size = npixon_size0;
-    run_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, sigmad, taud, syserr, cfg);
+    if(cfg.pixon_uniform)
+    {
+      npixon_size = npixon_size0;
+      run_drw_uniform(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, sigmad, taud, syserr, cfg);
+    }
+    else 
+    {
+      npixon_size = npixon_size0;
+      run_drw(cont, cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, sigmad, taud, syserr, cfg);
+    }
   }
   if(cfg.drv_lc_model == 2 || cfg.drv_lc_model == 3)
   {
@@ -152,10 +164,16 @@ int run(Config &cfg)
      * resp_contfix_uniform.txt, resp_contfix.txt
      * line_contfix_uniform.txt line_contfix.txt 
      */
-    npixon_size = npixon_size0;
-    run_contfix_uniform(cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
-    npixon_size = npixon_size0;
-    run_contfix(cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    if(cfg.pixon_uniform)
+    {
+      npixon_size = npixon_size0;
+      run_contfix_uniform(cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    }
+    else 
+    {
+      npixon_size = npixon_size0;
+      run_contfix(cont_model->cont_recon, line, pimg, npixel, npixon_size, ipositive_tau, cfg);
+    }
   }
 
   delete[] pimg;

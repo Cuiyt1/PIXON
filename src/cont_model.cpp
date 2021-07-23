@@ -253,9 +253,9 @@ ContModel::ContModel(Data& cont_in, double tback, double tforward, double tau_in
   i=3; /*  q */
   par_range_model[i][0] = -5.0;
   par_range_model[i][1] = 5.0;
-  par_prior_model[i] = GAUSSIAN;
+  par_prior_model[i] = UNIFORM;
   par_prior_gaussian[i][0] = 0.0;
-  par_prior_gaussian[i][1] = 1.0;
+  par_prior_gaussian[i][1] = 0.0;
 
   for(i=0; i<num_params; i++)
   {

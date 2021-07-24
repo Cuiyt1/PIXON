@@ -30,6 +30,7 @@ class PixonDRW:public Pixon
     void compute_mem_grad(const double *x);
     
     void compute_matrix();
+    void compute_matrix2();
     void set_covar_Umat(double sigma, double tau, double alpha);
     void set_covar_Pmat(double sigma, double tau, double alpha, double *PSmat);
 

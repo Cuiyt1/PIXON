@@ -53,6 +53,7 @@ PixonDRW::PixonDRW(
   grad_chisq_cont = new double[cont_in.size+nq];
 
   compute_matrix();
+  //compute_matrix2();
 }
 
 PixonDRW::~PixonDRW()
@@ -223,6 +224,80 @@ void PixonDRW::compute_matrix()
   }  
   // Q^1/2
   Chol_decomp_L(PQmat, cont.size, &info);
+
+  delete[] PEmat1;
+  delete[] PEmat2;
+  delete[] PSmat;
+}
+
+/*
+ * different cocariance matrix 
+ * S-SxC^-1xS
+ * 
+ */
+void PixonDRW::compute_matrix2()
+{
+  double *PEmat1, *PEmat2, *PSmat;
+  double *CL, *ybuf, *y, *yq, *u, *v;
+
+  double sigmad2, alpha;
+  int i, j, info;
+  
+  PEmat1 = new double [cont_data.size * cont.size];
+  PEmat2 = new double [cont.size * cont.size];
+  PSmat = new double [cont.size * cont.size];
+
+  sigmad2 = sigmad*sigmad;
+  alpha = 1.0;
+
+  CL = workspace;
+  ybuf = CL + cont_data.size*nq; 
+  y = ybuf + size_max;
+  yq = y + size_max;
+  u = yq + nq;
+  v = u + cont.size;
+
+  compute_semiseparable_drw(cont_data.time, cont_data.size, sigmad2, 1.0/taud, cont_data.error, syserr, W_data, D_data, phi_data);
+  // Cq^-1 = L^TxC^-1xL
+  multiply_mat_semiseparable_drw(Larr_data, W_data, D_data, phi_data, cont_data.size, nq, sigmad2, CL);
+  multiply_mat_MN_transposeA(Larr_data, CL, Cq, nq, nq, cont_data.size);
+
+  // L^TxC^-1xy
+  multiply_matvec_semiseparable_drw(cont_data.flux, W_data, D_data, phi_data, cont_data.size, sigmad2, ybuf);
+  multiply_mat_MN_transposeA(Larr_data, ybuf, yq, nq, 1, cont_data.size);
+
+  // (hat q) = Cqx(L^TxC^-1xy)
+  inverse_pomat(Cq, nq, &info);
+  multiply_mat_MN(Cq, yq, qhat, nq, 1, nq);
+
+  // Cq^1/2
+  Chol_decomp_L(Cq, nq, &info);
+
+  set_covar_Umat(sigmad, taud, alpha);
+  // SxC^-1xS^T
+  multiply_mat_transposeB_semiseparable_drw(USmat, W_data, D_data, phi_data, cont_data.size, cont.size, sigmad2, PEmat1);
+  multiply_mat_MN(USmat, PEmat1, PEmat2, cont.size, cont.size, cont_data.size);
+
+  set_covar_Pmat(sigmad, taud, alpha, PSmat);
+  for(i=0; i<cont.size * cont.size; i++)
+  {
+    PQmat[i] = PSmat[i] - PEmat2[i];
+  }
+  // assign errors
+  for(i=0; i<cont.size; i++)
+  {
+    cont.error[i] = sqrt(PQmat[i*cont.size + i]);
+  }
+  // Q^1/2
+  Chol_decomp_L(PQmat, cont.size, &info);
+
+  // Cq^1/2 x (L - SxC^-1xL)^T
+  multiply_mat_MN(USmat, CL, PEmat2, cont.size, nq, cont_data.size);
+  for(i=0; i<cont.size; i++)
+  {
+    PEmat1[i] = 1.0 - PEmat2[i];
+  }
+  multiply_mat_MN_transposeB(Cq, PEmat1, QLmat, nq, cont.size, nq);
 
   delete[] PEmat1;
   delete[] PEmat2;

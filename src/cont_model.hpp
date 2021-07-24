@@ -40,6 +40,7 @@ class ContModel
     void mcmc();
     void recon();
     void recon(const void *model);
+    void recon2(const void *model);
     void get_best_params();
     void set_covar_Umat(double sigma, double tau, double alpha);
     void set_covar_Pmat(double sigma, double tau, double alpha);

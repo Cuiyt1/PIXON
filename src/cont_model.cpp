@@ -528,7 +528,113 @@ void ContModel::recon()
   fout.close();
 }
 
+/* 
+ * covariance matrix 
+ * Q = [S^-1 + N^-1] = Nx[S+N]^-1xS
+ * with reconstructed errors N
+ * 
+ */
 void ContModel::recon(const void *model)
+{
+  double *Lbuf, *ybuf, *y, *Cq, *yq, *W, *D, *phi, *u, *v;
+  double syserr;
+
+  double *pm = (double *)model;
+  double sigma, sigma2, tau, alpha;
+  int i, j, info;
+
+  syserr = (exp(pm[0]) - 1.0) * mean_error;  // systematic error 
+  tau = exp(pm[2]);
+  sigma = exp(pm[1]) * sqrt(tau);
+  sigma2 = sigma*sigma;
+  alpha = 1.0;
+  
+  Lbuf = workspace;
+  ybuf = Lbuf + cont.size*nq; 
+  y = ybuf + size_max;
+  Cq = y + size_max;
+  yq = Cq + nq*nq;
+  W = yq + nq;
+  D = W + size_max;
+  phi = D + size_max;
+  u = phi + size_max;
+  v = u + cont_recon.size;
+
+  compute_semiseparable_drw(cont.time, cont.size, sigma2, 1.0/tau, cont.error, syserr, W, D, phi);
+  // Cq^-1 = L^TxC^-1xL
+  multiply_mat_semiseparable_drw(Larr_data, W, D, phi, cont.size, nq, sigma2, Lbuf);
+  multiply_mat_MN_transposeA(Larr_data, Lbuf, Cq, nq, nq, cont.size);
+
+  // L^TxC^-1xy
+  multiply_matvec_semiseparable_drw(cont.flux, W, D, phi, cont.size, sigma2, ybuf);
+  multiply_mat_MN_transposeA(Larr_data, ybuf, yq, nq, 1, cont.size);
+
+  // (hat q) = Cqx(L^TxC^-1xy)
+  inverse_pomat(Cq, nq, &info);
+  multiply_mat_MN(Cq, yq, ybuf, nq, 1, nq);
+
+  // q = uq + (hat q)
+  Chol_decomp_L(Cq, nq, &info);
+  multiply_matvec(Cq, &pm[num_params_drw], nq, yq);
+  for(i=0; i<nq; i++)
+    yq[i] += ybuf[i];
+  
+  // y = yc - Lxq
+  multiply_matvec_MN(Larr_data, cont.size, nq, yq, ybuf);
+  for(i=0; i<cont.size; i++)
+  {
+    y[i] = cont.flux[i] - ybuf[i];
+  }
+  
+  set_covar_Umat(sigma, tau, alpha);
+  // (hat s) = SxC^-1xy
+  multiply_matvec_semiseparable_drw(y, W, D, phi, cont.size, sigma2, ybuf);
+  multiply_matvec_MN(USmat, cont_recon.size, cont.size, ybuf, cont_recon.flux);
+
+  // SxC^-1xS^T
+  multiply_mat_transposeB_semiseparable_drw(USmat, W, D, phi, cont.size, cont_recon.size, sigma2, PEmat1);
+  multiply_mat_MN(USmat, PEmat1, PEmat2, cont_recon.size, cont_recon.size, cont.size);
+
+  for(i=0; i<cont_recon.size; i++)
+  {
+    cont_recon.error[i] = sqrt(sigma2 + syserr*syserr - PEmat2[i*cont_recon.size + i]);
+  }
+
+  set_covar_Pmat(sigma, tau, alpha);
+  compute_semiseparable_drw(cont_recon.time, cont_recon.size, sigma2, 1.0/tau, cont_recon.error, 0.0, W, D, phi);
+
+  // Q = [S^-1 + N^-1]^-1 = N x [S+N]^-1 x S
+  multiply_mat_semiseparable_drw(PSmat, W, D, phi, cont_recon.size, cont_recon.size, sigma2, PEmat2);
+  for(i=0; i<cont_recon.size; i++)
+  {
+    for(j=0; j<=i; j++)
+    {
+      PSmat[i*cont_recon.size + j] = PSmat[j*cont_recon.size + i] = cont_recon.error[i] * cont_recon.error[i] * PEmat2[i*cont_recon.size+j];
+    }
+  }  
+  // Q^1/2
+  Chol_decomp_L(PSmat, cont_recon.size, &info);
+  multiply_matvec(PSmat, &pm[num_params_var], cont_recon.size, y);
+
+  for(i=0; i<cont_recon.size; i++)
+  {
+    cont_recon.flux[i] += y[i] + yq[0];
+  }
+
+  ofstream fout;
+  fout.open("data/cont_recon_drw.txt");
+  for(i=0; i<cont_recon.size; i++)
+  {
+    fout<<cont_recon.time[i]<<"  "<<cont_recon.flux[i]*cont_recon.norm<<"   "<<cont_recon.error[i]*cont_recon.norm<<endl;
+  }
+  fout.close();
+}
+
+/*
+ * different covariance matrix
+ * S - SxC^-1xS
+ */
+void ContModel::recon2(const void *model)
 {
   double *Lbuf, *ybuf, *y, *Cq, *yq, *W, *D, *phi, *u, *v;
   double syserr;
@@ -589,25 +695,17 @@ void ContModel::recon(const void *model)
   multiply_mat_transposeB_semiseparable_drw(USmat, W, D, phi, cont.size, cont_recon.size, sigma2, PEmat1);
   multiply_mat_MN(USmat, PEmat1, PEmat2, cont_recon.size, cont_recon.size, cont.size);
 
-  //set_covar_Pmat(sigma, tau, alpha);
-  //for(i=0; i<cont_recon.size * cont_recon.size; i++)
-  //{
-  //  PSmat[i] = PSmat[i] - PEmat2[i];
-  //}
-  //for(i=0; i<cont_recon.size; i++)
-  //{
-  //  cont_recon.error[i] = sqrt(PSmat[i*cont_recon.size + i]);
-  //}
-  //Chol_decomp_L(PSmat, cont_recon.size, &info);
-  //multiply_matvec(PSmat, &pm[num_params_var], cont_recon.size, y);
-
+  set_covar_Pmat(sigma, tau, alpha);
+  for(i=0; i<cont_recon.size * cont_recon.size; i++)
+  {
+    PSmat[i] = PSmat[i] - PEmat2[i];
+  }
   for(i=0; i<cont_recon.size; i++)
   {
-    cont_recon.error[i] = sqrt(sigma2 + syserr*syserr - PEmat2[i*cont_recon.size + i]);
+    cont_recon.error[i] = sqrt(PSmat[i*cont_recon.size + i]);
   }
-  compute_inverse_semiseparable_plus_diag(cont_recon.time, cont_recon.size, sigma2, 1.0/tau, 
-                                          cont_recon.error, 0.0, u, v, W, D, phi, workspace_uv);
-  multiply_matvec_semiseparable_uv(&pm[num_params_var], u, W, D, phi, cont_recon.size, y);
+  Chol_decomp_L(PSmat, cont_recon.size, &info);
+  multiply_matvec(PSmat, &pm[num_params_var], cont_recon.size, y);
 
   for(i=0; i<cont_recon.size; i++)
   {
@@ -618,7 +716,7 @@ void ContModel::recon(const void *model)
   fout.open("data/cont_recon_drw.txt");
   for(i=0; i<cont_recon.size; i++)
   {
-    fout<<cont_recon.time[i]<<"  "<<cont_recon.flux[i]<<"   "<<cont_recon.error[i]<<endl;
+    fout<<cont_recon.time[i]<<"  "<<cont_recon.flux[i]*cont_recon.norm<<"   "<<cont_recon.error[i]*cont_recon.norm<<endl;
   }
   fout.close();
 }

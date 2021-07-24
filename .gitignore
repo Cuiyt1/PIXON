@@ -10,3 +10,4 @@
 !cdnest/*.[ch]
 !cdnest/CMakeLists.txt
 !.gitignore
+!README.rst
